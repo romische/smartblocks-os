@@ -25,6 +25,7 @@ void OS::switch_context(uint16_t* address){
 	output_file = Firmware::GetInstance().m_psHUART;
 
     asm volatile("in r0, __SP_L__\nsts stackTop, r0\nin r0, __SP_H__\nsts stackTop+1, r0");
+    fprintf(output_file, "-- stackTop : %p \r\n", stackTop);
     //stacktop points to the main function 
 
     // reserve for the while loop
@@ -61,7 +62,7 @@ void OS::switch_context(uint16_t* address){
 
    //set the value of tempSp and run.
    tempSp = top-35;
-   //RESTORE_CONTEXT(tempSp)
+   RESTORE_CONTEXT(tempSp)
    
    //fprintf(output_file, "-- tempSp : %p \r\n", tempSp);
 

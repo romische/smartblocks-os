@@ -1,5 +1,6 @@
 #include "timer.h"
 #include "os.h"
+#include "firmware.h"
 #include <avr/interrupt.h>
 
 #define CLOCK_CYCLES_PER_MICROSECOND() ( F_CPU / 1000000L )
@@ -28,13 +29,13 @@
 /****************************************/
 
 void test(void* arg){
-	HardwareSerial::instance().Write('y');
+	HardwareSerial::instance().Write('t');
 	HardwareSerial::instance().Write('e');
-	HardwareSerial::instance().Write('a');
-	HardwareSerial::instance().Write('a');
-	HardwareSerial::instance().Write('a');
-	HardwareSerial::instance().Write('a');
-	HardwareSerial::instance().Write('a');
+	HardwareSerial::instance().Write('s');
+	HardwareSerial::instance().Write('t');
+	HardwareSerial::instance().Write(' ');
+	HardwareSerial::instance().Write('o');
+	HardwareSerial::instance().Write('k');
 	HardwareSerial::instance().Write('\r');
 	HardwareSerial::instance().Write('\n');
 }
@@ -49,12 +50,13 @@ void CTimer::COverflowInterrupt::ServiceRoutine() {
    if (unTimerFraction >= FRACT_MAX) {
       unTimerFraction -= FRACT_MAX;
       unTimerMilliseconds += 1;
-   		//HardwareSerial::instance().Write('t'); TODO HERE PUT CONTEXT SWITCH
-   		//HardwareSerial::instance().Write('t');
-   		//HardwareSerial::instance().Write('t');
-   		//test(nullptr);
-   		//OS::GetInstance().switch_context((uint16_t*) test);
    }
+	   if (unTimerMilliseconds%500 == 0){
+		  	//TODO here include the context switch
+		  	Firmware::GetInstance().printTime(unTimerMilliseconds);
+	   		//test(nullptr);
+	   		//OS::GetInstance().switch_context((uint16_t*) test);
+	   }
    m_pcTimer->m_unTimerFraction = unTimerFraction;
    m_pcTimer->m_unTimerMilliseconds = unTimerMilliseconds;
    m_pcTimer->m_unOverflowCount++;

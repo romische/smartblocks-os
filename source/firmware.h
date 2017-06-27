@@ -40,6 +40,12 @@ public:
    CTimer& GetTimer() {
       return m_cTimer;
    }
+   
+   void printTime(uint32_t milisec) {
+      fprintf(m_psHUART, "INTERRUPT at %lums\r\n", milisec);
+
+   }
+   
 
    int Exec() {
       uint8_t unInput = 0;

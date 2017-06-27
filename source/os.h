@@ -12,7 +12,7 @@ class OS {
 	
 public:
 	static OS& GetInstance() { return _os;	}
-	void switch_context(uint16_t* address);
+	void switch_context(uint16_t* address)  __attribute((naked));
 
 private:
 	OS();
