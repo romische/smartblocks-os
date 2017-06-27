@@ -1,0 +1,17 @@
+#!/bin/sh
+
+echo "~~ si probleme: sudo chmod a+rw /dev/ttyUSB0"
+echo "~~ running avrdude & picocom."
+echo "~~ to exit program: stop: ctrl+a+x"
+
+echo "\n~~~~~~~~~~~~ make"
+make
+
+
+echo "\n~~~~~~~~~~~~ avrdude "
+avrdude -c arduino -p m328p -P /dev/ttyUSB0 -b 115200 -U flash:w:build/firmware.hex
+
+
+
+echo "\n~~~~~~~~~~~~ picocom" 
+picocom -b 115200 /dev/ttyUSB0
