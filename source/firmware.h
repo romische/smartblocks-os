@@ -16,6 +16,7 @@
 #include <huart_controller.h>
 #include <tw_controller.h>
 #include <timer.h>
+#include <system.h>
 
 class Firmware {
 public:

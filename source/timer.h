@@ -2,7 +2,6 @@
 #define TIMER_H
  
 #include "interrupt.h"
-#include <huart_controller.h>
 
 class CTimer {
 public:

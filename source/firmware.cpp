@@ -1,5 +1,4 @@
 #include "firmware.h"
-#include "os.h"
 
 /* initialisation of the static singleton */
 Firmware Firmware::_firmware;
@@ -30,17 +29,9 @@ int main(void)
    
    
    fprintf(&huart, "\r\n\r\nStarting the program...\r\n");
-   Firmware::GetInstance().GetHUARTController().Flush();
 
-	Firmware::GetInstance().Exec();
+   return Firmware::GetInstance().Exec();
    
-   //OS::GetInstance().switch_context((uint16_t*) Execute1);
-   
-   fprintf(&huart, "...done\r\n");
-   Firmware::GetInstance().GetHUARTController().Flush();
-   
-   return 1; 
-   //return Firmware::GetInstance().Exec();
 }
 
 /***********************************************************/
