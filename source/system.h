@@ -12,9 +12,6 @@
 #define stackPointer uint8_t*
 
 class System {	
-private:
-	stackPointer sp;
-	stackPointer tasks_sp[MAX_TASKS];
 	
 public:
 	static System& instance() { return _system; }

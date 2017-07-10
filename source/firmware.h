@@ -44,7 +44,10 @@ public:
    
    void printTime() {
       fprintf(m_psHUART, "INTERRUPT at %lums\r\n", m_cTimer.GetMilliseconds());
-
+   }
+   
+   void printPointer(stackPointer p) {
+      fprintf(m_psHUART, "pointer : %p\r\n", p);
    }
    
    int Exec() {
