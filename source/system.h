@@ -6,12 +6,24 @@
 
 
 #define TASK_STACK_SIZE 256
+#define MAX_TASKS 5
+#define TICK_INTERVAL 10
 
+#define stackPointer uint8_t*
 
 class System {	
+private:
+	stackPointer sp;
+	stackPointer tasks_sp[MAX_TASKS];
 	
 public:
-	static System& GetInstance() { return _system; }
+	static System& instance() { return _system; }
+	
+	int schedule_task(void* address, void* args);
+	//void exit_task();
+	//void sleep();
+	
+	void run();
 
 private:
 	System();

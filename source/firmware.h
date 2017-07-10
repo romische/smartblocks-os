@@ -42,12 +42,11 @@ public:
       return m_cTimer;
    }
    
-   void printTime(uint32_t milisec) {
-      fprintf(m_psHUART, "INTERRUPT at %lums\r\n", milisec);
+   void printTime() {
+      fprintf(m_psHUART, "INTERRUPT at %lums\r\n", m_cTimer.GetMilliseconds());
 
    }
    
-
    int Exec() {
       uint8_t unInput = 0;
       
