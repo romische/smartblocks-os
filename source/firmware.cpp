@@ -6,9 +6,9 @@ Firmware Firmware::_firmware;
    FILE huart;    
 
 void dummy1(){
-	while(true)
-		//fprintf(&huart, "'");
-			Firmware::GetInstance().GetHUARTController().Write('#');
+	for(int i=0; ;i++)
+		fprintf(&huart, ".%d.",i);
+			//Firmware::GetInstance().GetHUARTController().Write('#');
 }
 
 void dummy2(){

@@ -17,7 +17,6 @@ stackPointer tasks_sp[MAX_TASKS];
 
 int task_count;
 int current_task;
-int count_interrupt;
 
 /* initialisation of the static singleton */
 System System::_system;
@@ -64,10 +63,13 @@ void startInterrupt(){
     sei();
 }
 
-void System::run(){	
 
+void System::run(){	
 	startInterrupt();
+
 }
+
+
 
 
 
@@ -76,8 +78,12 @@ ISR(TIMER0_COMPA_vect, ISR_NAKED) {
 	cli();
 	//asm volatile("lds r16, stackTop\nlds r17, stackTop+1\nout __SP_L__, r16\nout __SP_H__, r17\n");
 
+
+	if(current_task != -1)
+		tasks_sp[current_task]=tempSp;
 	
 	current_task = (current_task+1)%task_count;
+	
 	
 	tempSp=tasks_sp[current_task];
 		
