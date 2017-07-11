@@ -64,27 +64,28 @@ void startInterrupt(){
 }
 
 
-void System::run(){	
+int System::run(){	
 	startInterrupt();
 
+	while(true){}
+	return 0;
 }
 
 
-
+int chooseNextTask(){
+	return (current_task+1)%task_count;
+}
 
 
 ISR(TIMER0_COMPA_vect, ISR_NAKED) {
 	SAVE_CONTEXT(tempSp)
 	cli();
-	//asm volatile("lds r16, stackTop\nlds r17, stackTop+1\nout __SP_L__, r16\nout __SP_H__, r17\n");
-
 
 	if(current_task != -1)
 		tasks_sp[current_task]=tempSp;
 	
-	current_task = (current_task+1)%task_count;
 	
-	
+	current_task = chooseNextTask();
 	tempSp=tasks_sp[current_task];
 		
 	

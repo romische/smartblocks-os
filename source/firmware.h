@@ -50,34 +50,6 @@ public:
       fprintf(m_psHUART, "pointer : %p\r\n", p);
    }
    
-   int Exec() {
-      uint8_t unInput = 0;
-      
-      fprintf(m_psHUART, "Ready>\r\n");
-
-      for(;;) {
-         if(Firmware::GetInstance().GetHUARTController().Available()) {
-            unInput = Firmware::GetInstance().GetHUARTController().Read();
-            /* flush */
-            while(Firmware::GetInstance().GetHUARTController().Available()) {
-               Firmware::GetInstance().GetHUARTController().Read();
-            }
-         }
-         else {
-            unInput = 0;
-         }
-
-         switch(unInput) {
-         case 'u':
-            fprintf(m_psHUART, "Uptime = %lums\r\n", m_cTimer.GetMilliseconds());
-            break;
-         default:
-            break;
-         }
-      }
-      return 0;
-   }
-
 
 private:
 

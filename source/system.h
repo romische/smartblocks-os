@@ -20,7 +20,7 @@ public:
 	//void exit_task();
 	//void sleep();
 	
-	void run();
+	int run();
 
 private:
 	System();
