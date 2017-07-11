@@ -11,6 +11,14 @@
 
 #define stackPointer uint8_t*
 
+struct task_definition {
+    stackPointer sp;
+    bool running;
+    int wait_time;
+};
+typedef struct task_definition task_definition;
+
+
 class System {	
 	
 public:

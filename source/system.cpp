@@ -13,7 +13,7 @@ stackPointer tasksStackTop;
 stackPointer mainTask;
 
 stackPointer tempSp;
-stackPointer tasks_sp[MAX_TASKS];
+task_definition tasks[MAX_TASKS];
 
 int task_count;
 int current_task;
@@ -33,20 +33,32 @@ System::System(){
 }
 
 int System::schedule_task(void* address, void* args){
-
+	int task_num;
+	if(task_count == MAX_TASKS){
+		//look for a task that finished orelse return -1
+		return -1;
+	}
+	else{
+		task_num=task_count;
+		task_count++;	
+	}
+	
 	// Reserving space on the stack for the task
-	stackPointer top = tasksStackTop;
-	tasksStackTop -= TASK_STACK_SIZE;
+	stackPointer top = tasksStackTop - (task_num*TASK_STACK_SIZE);
 	memset(top - TASK_STACK_SIZE, 0, TASK_STACK_SIZE);
 
 	//put in stack : address and arguments
 	*(top) = ((uint16_t)address);
 	*(top - 1) = (((uint16_t)address) >> 8);
-	   
-	//save the initial stackpointer for this task
-	tasks_sp[task_count] = top-35; // because SAVE_CONTEXT will pop 33 values. 
+	 
+	//save the initial stackpointer for this task  
+	cli();
+	tasks[task_num].sp = top-35; // because SAVE_CONTEXT will pop 33 values. 
 								   // the 2 remaining values are the return address (aka PC)
-	task_count++;	
+	tasks[task_num].wait_time=-1;
+	tasks[task_num].running=true;
+	sei();
+		
 }
 
 
@@ -82,11 +94,11 @@ ISR(TIMER0_COMPA_vect, ISR_NAKED) {
 	cli();
 
 	if(current_task != -1)
-		tasks_sp[current_task]=tempSp;
+		tasks[current_task].sp=tempSp;
 	
 	
 	current_task = chooseNextTask();
-	tempSp=tasks_sp[current_task];
+	tempSp=tasks[current_task].sp;
 		
 	
 	
