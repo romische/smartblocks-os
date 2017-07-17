@@ -26,9 +26,10 @@ void dummy1(){
 			//Firmware::GetInstance().GetHUARTController().Write('#');
 }
 
-void dummy2(){
+void dummy2(void* arg){
+	char c = *((char*) arg);
 	while(true)
-			Firmware::GetInstance().GetHUARTController().Write('~');
+			Firmware::GetInstance().GetHUARTController().Write(c);
 }
 
 
@@ -39,7 +40,8 @@ int main(void){
    init_huart_file();
 	
    System::instance().schedule_task((void*) dummy1, nullptr);
-   System::instance().schedule_task((void*) dummy2, nullptr);
+   char arg = '-';
+   System::instance().schedule_task((void*) dummy2, (void*) &arg );
    
    fprintf(&huart, "\r\n\r\nStarting the program...\r\n");
    return System::instance().run();  

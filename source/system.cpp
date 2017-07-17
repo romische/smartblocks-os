@@ -51,6 +51,11 @@ int System::schedule_task(void* address, void* args){
 	*(top) = ((uint16_t)address);
 	*(top - 1) = (((uint16_t)address) >> 8);
 	 
+
+    stackPointer registerStartAddr = top - 3;
+    *(registerStartAddr - 24) = ((uint16_t) args);
+    *(registerStartAddr - 25) = (((uint16_t) args) >> 8);
+	 
 	//save the initial stackpointer for this task  
 	cli();
 	tasks[task_num].sp = top-35; // because SAVE_CONTEXT will pop 33 values. 
