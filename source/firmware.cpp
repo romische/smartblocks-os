@@ -40,8 +40,20 @@ int main(void){
    init_huart_file();
 	
    System::instance().schedule_task((void*) dummy1, nullptr);
-   char arg = '-';
-   System::instance().schedule_task((void*) dummy2, (void*) &arg );
+   char arg[] = {'-', '~', '+', '.', 'o'};
+
+   System::instance().schedule_task((void*) dummy2, (void*) arg ); //-
+   System::instance().schedule_task((void*) dummy2, (void*) arg+1 ); //~
+   System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //+
+   //System::instance().schedule_task((void*) dummy2, (void*) arg+3 ); //.
+   //System::instance().schedule_task((void*) dummy2, (void*) arg+4 ); //o
+   
+   // [probably..] printint heap top
+   void* p = malloc(sizeof(int8_t));
+   fprintf(&huart, "Heap until %p\r\n", p );
+   free(p);
+   
+   
    
    fprintf(&huart, "\r\n\r\nStarting the program...\r\n");
    return System::instance().run();  

@@ -10,7 +10,6 @@
 
 stackPointer stackTop;
 stackPointer tasksStackTop;
-stackPointer mainTask;
 
 stackPointer tempSp;
 task_definition tasks[MAX_TASKS];
@@ -25,7 +24,7 @@ System System::_system;
 System::System(){
 	asm volatile("in r0, __SP_L__\nsts stackTop, r0\nin r0, __SP_H__\nsts stackTop+1, r0");
     stackTop -= 32;
-	tasksStackTop = stackTop - 256;
+	tasksStackTop = stackTop - TASK_STACK_SIZE;
 	
 	task_count=0;
 	current_task=-1;
@@ -35,7 +34,7 @@ System::System(){
 int System::schedule_task(void* address, void* args){
 	int task_num;
 	if(task_count == MAX_TASKS){
-		//look for a task that finished orelse return -1
+		//look for a task that is finished orelse return -1
 		return -1;
 	}
 	else{
