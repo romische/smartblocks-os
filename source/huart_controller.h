@@ -24,6 +24,7 @@
 #define HardwareSerial_h
 
 #include <inttypes.h>
+#include <stdio.h>
 
 //#include <Stream.h>
 //#include <Timer.h>
@@ -47,12 +48,15 @@ private:
    uint8_t _udrie;
    uint8_t _u2x;
    bool transmitting;
+   FILE mystdout;
 
 public:
 
    static HardwareSerial& instance() {
       return _hardware_serial;
    }
+   
+   FILE* get_file(){return &mystdout;}
 
    void Begin(unsigned long);
    void End();
@@ -79,6 +83,7 @@ public:
    
 
    //operator bool();
+   
 
 private:
    

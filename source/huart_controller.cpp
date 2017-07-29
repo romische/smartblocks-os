@@ -67,7 +67,6 @@ ISR(USART_UDRE_vect)
    }
 }
 
-
 // Constructors ////////////////////////////////////////////////////////////////
 
 HardwareSerial::HardwareSerial() {
@@ -87,7 +86,13 @@ HardwareSerial::HardwareSerial() {
 
    /* Disconnect UART (reconnected by begin()) */
    *_ucsrb = 0;
-
+      
+   fdev_setup_stream(&mystdout, 
+                     [](char c_to_write, FILE* pf_stream) {
+                        HardwareSerial::instance().Write(c_to_write);
+                        return 1;
+                     }, NULL, _FDEV_SETUP_RW);
+   
    /* start up serial */
    Begin(57600);
 }
