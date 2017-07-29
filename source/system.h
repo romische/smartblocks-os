@@ -25,7 +25,7 @@ public:
 	static System& instance() { return _system; }
 	
 	int schedule_task(void* address, void* args);
-	//void exit_task();
+	void exit_task();
 	//void sleep();
 	
 	int run();

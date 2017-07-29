@@ -11,21 +11,13 @@
 
 
 void wait(){
-		for(int j=0; j<1000; j++){
-			asm volatile("nop");
-		}
-
-}
-
-
-void dummy1(){
-	for(int i=0; ;i++){
-		HardwareSerial::instance().lock();
-		printf(".%d.",i);
-		HardwareSerial::instance().unlock();
-		wait();
+	for(int j=0; j<1000; j++){
+		asm volatile("nop");
 	}
+
 }
+
+
 
 void dummy2(void* arg){
 	char c = *((char*) arg);
@@ -37,6 +29,23 @@ void dummy2(void* arg){
 	}
 }
 
+void dummy1(){
+	for(int i=0; ;i++){
+		HardwareSerial::instance().lock();
+		printf("%d_",i);
+		HardwareSerial::instance().unlock();
+		wait();
+	}
+}
+
+void dummy3(){
+	HardwareSerial::instance().lock();
+	printf("dummy3 ran and ended\r\n");
+	HardwareSerial::instance().unlock();
+	System::instance().exit_task();
+	
+}
+
 int main(void){
 	
    stdout = HardwareSerial::instance().get_file();
@@ -45,14 +54,15 @@ int main(void){
    
    System::instance().schedule_task((void*) dummy1, nullptr);
    
-   char arg[] = {'-', '~', '+', '.', 'o'};
+   char arg[] = {'-', 'o', '+', '.', '~'};
    System::instance().schedule_task((void*) dummy2, (void*) arg ); //-
    System::instance().schedule_task((void*) dummy2, (void*) arg+1 ); //~
-   System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //+
+   //System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //+
    //System::instance().schedule_task((void*) dummy2, (void*) arg+3 ); //.
    //System::instance().schedule_task((void*) dummy2, (void*) arg+4 ); //o
    
    
+   System::instance().schedule_task((void*) dummy3, nullptr);
    
    printf("\r\n\r\nStarting the program...\r\n");
    return System::instance().run();  

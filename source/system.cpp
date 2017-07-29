@@ -16,6 +16,10 @@ task_definition tasks[MAX_TASKS];
 int task_count;
 int current_task;
 
+
+void do_something_else();
+
+
 /* initialisation of the static singleton */
 System System::_system;
 
@@ -29,6 +33,22 @@ System::System(){
 	current_task=-1;
 	
 }
+
+/* Set interrupt for timer0 at 100Hz (every 10 milliseconds)
+ * see http://www.instructables.com/id/Arduino-Timer-Interrupts/ for calcul
+ */
+int System::run(){	
+	cli();    
+    TCCR0A = _BV(COM0A1) | _BV(WGM01);
+    TCCR0B = _BV(CS02) | _BV(CS00); //1024 prescaler
+    OCR0A = 2*F_CPU / 1024 / (1000 / TICK_INTERVAL); // F_CPU = 8000000 but works at 16000000...??
+    TIMSK0 = _BV(OCIE0A); // enable timer compare interrupt
+    sei();
+	
+	while(true){}
+	return 0;
+}
+
 
 int System::schedule_task(void* address, void* args){
 	int task_num;
@@ -66,44 +86,53 @@ int System::schedule_task(void* address, void* args){
 
 
 
-/* Set interrupt for timer0 at 100Hz (every 10 milliseconds)
- * see http://www.instructables.com/id/Arduino-Timer-Interrupts/ for calcul
- */
-void startInterrupt(){
-	cli();    
-    TCCR0A = _BV(COM0A1) | _BV(WGM01);
-    TCCR0B = _BV(CS02) | _BV(CS00); //1024 prescaler
-    OCR0A = 2*F_CPU / 1024 / (1000 / TICK_INTERVAL); // F_CPU = 8000000 but works at 16000000...??
-    TIMSK0 = _BV(OCIE0A); // enable timer compare interrupt
-    sei();
-}
-
-
-int System::run(){	
-	startInterrupt();
-
-	while(true){}
-	return 0;
+void System::exit_task(){
+	tasks[current_task].running=false;
+	do_something_else();
 }
 
 
 int chooseNextTask(){
-	return (current_task+1)%task_count;
+
+    int next = current_task;
+    
+    for(int i = 0; i<task_count; i++){
+        next = (next+1)%task_count;
+	    if(tasks[next].running)
+	    	return next;
+	}
+
+	// if no running task is found
+	return -1;
+}
+
+
+void do_something_else() {
+    cli();
+
+    SAVE_CONTEXT(tempSp)
+
+    if(current_task != -1) 
+		tasks[current_task].sp=tempSp;
+
+	current_task = chooseNextTask();
+	tempSp=tasks[current_task].sp;
+
+    RESTORE_CONTEXT(tempSp)
+    sei();
 }
 
 
 ISR(TIMER0_COMPA_vect, ISR_NAKED) {
-	SAVE_CONTEXT(tempSp)
 	cli();
 
+	SAVE_CONTEXT(tempSp)
+	
 	if(current_task != -1)
 		tasks[current_task].sp=tempSp;
 	
-	
 	current_task = chooseNextTask();
 	tempSp=tasks[current_task].sp;
-		
-	
 	
     RESTORE_CONTEXT(tempSp)
     asm volatile("reti");
