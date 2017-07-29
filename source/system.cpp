@@ -49,12 +49,20 @@ int System::run(){
 	return 0;
 }
 
+int find_not_running_task(){
+	for(int i = 0; i<task_count; i++){
+       	if(!tasks[i].running)
+       		return i;
+	}
+	return -1;
+}
 
 int System::schedule_task(void* address, void* args){
 	int task_num;
 	if(task_count == MAX_TASKS){
-		//look for a task that is finished orelse return -1
-		return -1;
+		task_num = find_not_running_task();
+		if (task_num == -1) //no not running task has been found
+			return -1;
 	}
 	else{
 		task_num=task_count;
@@ -81,7 +89,8 @@ int System::schedule_task(void* address, void* args){
 	tasks[task_num].wait_time=-1;
 	tasks[task_num].running=true;
 	sei();
-		
+	
+	return 0;
 }
 
 

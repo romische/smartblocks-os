@@ -35,6 +35,10 @@ void dummy1(){
 		printf("%d_",i);
 		HardwareSerial::instance().unlock();
 		wait();
+		if(i==100){
+			char arg = '6';
+			System::instance().schedule_task((void*) dummy2, (void*) &arg ); 
+		}
 	}
 }
 
@@ -43,7 +47,6 @@ void dummy3(){
 	printf("dummy3 ran and ended\r\n");
 	HardwareSerial::instance().unlock();
 	System::instance().exit_task();
-	
 }
 
 int main(void){
