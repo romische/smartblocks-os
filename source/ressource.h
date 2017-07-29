@@ -34,7 +34,7 @@ public:
 
 
 private:
-	bool locked = false;
+	volatile bool locked = false;
 };
 
 #endif

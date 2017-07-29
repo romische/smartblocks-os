@@ -10,8 +10,6 @@
 #include <system.h>
 
 
-FILE* huart;
-
 void wait(){
 		for(int j=0; j<1000; j++){
 			asm volatile("nop");
