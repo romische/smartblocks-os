@@ -12,21 +12,38 @@
 
 FILE* huart;
 
+void wait(){
+		for(int j=0; j<1000; j++){
+			asm volatile("nop");
+		}
+
+}
+
+
 void dummy1(){
-	for(int i=0; ;i++)
+	for(int i=0; ;i++){
+		HardwareSerial::instance().lock();
 		printf(".%d.",i);
-			//Firmware::GetInstance().GetHUARTController().Write('#');
+		HardwareSerial::instance().unlock();
+		wait();
+	}
 }
 
 void dummy2(void* arg){
 	char c = *((char*) arg);
-	while(true)
-			HardwareSerial::instance().Write(c);
+	while(true){
+		HardwareSerial::instance().lock();
+		HardwareSerial::instance().Write(c);
+		HardwareSerial::instance().unlock();
+		wait();
+	}
 }
 
 int main(void){
 	
    stdout = HardwareSerial::instance().get_file();
+   
+   //
    
    System::instance().schedule_task((void*) dummy1, nullptr);
    

@@ -25,13 +25,14 @@
 
 #include <inttypes.h>
 #include <stdio.h>
+#include "ressource.h"
 
 //#include <Stream.h>
 //#include <Timer.h>
 
 struct ring_buffer;
 
-class HardwareSerial //: public Stream
+class HardwareSerial : public Ressource
 {
 private:
    ring_buffer *_rx_buffer;
