@@ -1,12 +1,12 @@
-#ifndef RESSOURCE_H
-#define RESSOURCE_H
+#ifndef RESOURCE_H
+#define RESOURCE_H
 
 
-class Ressource {	
+class Resource {	
 	
 public:
 
-	//Ressource() : locked(false) {}
+	//Resource() : locked(false) {}
 	//seems to work without the constructor..
 	
 	bool get_lock_value(){ return locked;}
