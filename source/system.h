@@ -14,7 +14,7 @@
 struct task_definition {
     stackPointer sp;
     bool running;
-    int wait_time;
+    int sleep_time;
 };
 typedef struct task_definition task_definition;
 
@@ -26,7 +26,7 @@ public:
 	
 	int schedule_task(void* address, void* args);
 	void exit_task();
-	//void sleep();
+	void sleep(int t);
 	
 	int run();
 

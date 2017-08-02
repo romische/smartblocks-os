@@ -34,8 +34,10 @@ System::System(){
 	
 }
 
-/* Set interrupt for timer0 at 100Hz (every 10 milliseconds)
- * see http://www.instructables.com/id/Arduino-Timer-Interrupts/ for calcul
+/* 
+ * Set interrupt for timer0 at 100Hz (every 10 milliseconds)
+ *   (see http://www.instructables.com/id/Arduino-Timer-Interrupts/ for calcul)
+ * Then run an infinite loop to avoid stopping when no task is running.
  */
 int System::run(){	
 	cli();    
@@ -49,6 +51,11 @@ int System::run(){
 	return 0;
 }
 
+
+/*
+ * Find a task whose flag "running" is set to false and return its index in the array of tasks.
+ * If no task is found, return -1
+ */
 int find_not_running_task(){
 	for(int i = 0; i<task_count; i++){
        	if(!tasks[i].running)
@@ -57,6 +64,12 @@ int find_not_running_task(){
 	return -1;
 }
 
+
+/*
+ * Adds a task in the array of tasks, and initiate its stack.
+ * If the maximum number of tasks is not reached, it is straightforward
+ * Otherwise we must erase a non running task if possible. If not possible, return -1.
+ */
 int System::schedule_task(void* address, void* args){
 	int task_num;
 	if(task_count == MAX_TASKS){
@@ -86,7 +99,7 @@ int System::schedule_task(void* address, void* args){
 	cli();
 	tasks[task_num].sp = top-35; // because SAVE_CONTEXT will pop 33 values. 
 								   // the 2 remaining values are the return address (aka PC)
-	tasks[task_num].wait_time=-1;
+	tasks[task_num].sleep_time=-1;
 	tasks[task_num].running=true;
 	sei();
 	
@@ -94,20 +107,25 @@ int System::schedule_task(void* address, void* args){
 }
 
 
-
+/*
+ * Set the variable "running" of the current task to be false, meaning it will not run anymore.
+ * Then calls to do_something_else
+ */
 void System::exit_task(){
 	tasks[current_task].running=false;
 	do_something_else();
 }
 
-
+/*
+ * Returns the index in the task array of the next task to run, which must be running and not sleeping
+ * If none is found, return -1
+ */
 int chooseNextTask(){
-
     int next = current_task;
     
     for(int i = 0; i<task_count; i++){
         next = (next+1)%task_count;
-	    if(tasks[next].running)
+	    if(tasks[next].running && tasks[next].sleep_time<=0)
 	    	return next;
 	}
 
@@ -116,6 +134,9 @@ int chooseNextTask(){
 }
 
 
+/*
+ * Set the stack to run the next task
+ */
 void do_something_else() {
     cli();
 
@@ -132,6 +153,10 @@ void do_something_else() {
 }
 
 
+/*
+ * Interrupt Service Routine of Timer0.
+ * Set the stack to run the next task
+ */
 ISR(TIMER0_COMPA_vect, ISR_NAKED) {
 	cli();
 
