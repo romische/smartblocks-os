@@ -49,23 +49,46 @@ void dummy3(){
 	System::instance().exit_task();
 }
 
+void dummy4(){
+	CTimer timer(TCCR2A,
+               TCCR2A | (1 << WGM21) | (1 << WGM20),
+               TCCR2B,
+               TCCR2B | (1 << CS22),
+               TIMSK2,
+               TIMSK2 | (1 << TOIE2),
+               TIFR2,
+               TCNT2,
+               TIMER2_OVF_vect_num);
+	int millis;
+	int last = (int) timer.GetMilliseconds();
+	while(true){
+		millis = (int) timer.GetMilliseconds();
+		if(millis-last >1000){
+			last = millis;
+			HardwareSerial::instance().lock();
+			printf("Uptime = %d\r\n", millis);
+			HardwareSerial::instance().unlock();
+		}
+	}
+}
+
 int main(void){
 	
    stdout = HardwareSerial::instance().get_file();
    
    //
    
-   System::instance().schedule_task((void*) dummy1, nullptr);
+   System::instance().schedule_task((void*) dummy4, nullptr);
    
    char arg[] = {'-', 'o', '+', '.', '~'};
    System::instance().schedule_task((void*) dummy2, (void*) arg ); //-
    System::instance().schedule_task((void*) dummy2, (void*) arg+1 ); //~
-   //System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //+
+   System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //+
    //System::instance().schedule_task((void*) dummy2, (void*) arg+3 ); //.
    //System::instance().schedule_task((void*) dummy2, (void*) arg+4 ); //o
    
    
-   System::instance().schedule_task((void*) dummy3, nullptr);
+   //System::instance().schedule_task((void*) dummy3, nullptr);
    
    printf("\r\n\r\nStarting the program...\r\n");
    return System::instance().run();  
