@@ -37,7 +37,6 @@ System::System(){
 /* 
  * Set interrupt for timer0 at 100Hz (every 10 milliseconds)
  *   (see http://www.instructables.com/id/Arduino-Timer-Interrupts/ for calcul)
- * Then run an infinite loop to avoid stopping when no task is running.
  */
 int System::run(){	
 	cli();    
@@ -47,21 +46,8 @@ int System::run(){
     TIMSK0 = _BV(OCIE0A); // enable timer compare interrupt
     sei();
 	
-	while(true){}
+	while(true){}  //to wait until 1st interrupt
 	return 0;
-}
-
-
-/*
- * Find a task whose flag "running" is set to false and return its index in the array of tasks.
- * If no task is found, return -1
- */
-int find_not_running_task(){
-	for(int i = 0; i<task_count; i++){
-       	if(!tasks[i].running)
-       		return i;
-	}
-	return -1;
 }
 
 
@@ -73,9 +59,18 @@ int find_not_running_task(){
 int System::schedule_task(void* address, void* args){
 	int task_num;
 	if(task_count == MAX_TASKS){
-		task_num = find_not_running_task();
-		if (task_num == -1) //no not running task has been found
+		//look for a task that is finished
+		int finished_task = -1;
+		for(int i = 0; i<task_count; i++){
+		   	if(!tasks[i].running){
+		   		finished_task = i;
+		   		break;
+		   	}
+		}
+		if (finished_task == -1) //no not running task has been found
 			return -1;
+		else
+			task_num = finished_task;
 	}
 	else{
 		task_num=task_count;
@@ -129,7 +124,7 @@ int chooseNextTask(){
 	    	return next;
 	}
 
-	// if no running task is found
+	// if no running task is found --> leading to undefined behavior
 	return -1;
 }
 
@@ -155,19 +150,8 @@ void do_something_else() {
 
 /*
  * Interrupt Service Routine of Timer0.
- * Set the stack to run the next task
  */
 ISR(TIMER0_COMPA_vect, ISR_NAKED) {
-	cli();
-
-	SAVE_CONTEXT(tempSp)
-	
-	if(current_task != -1)
-		tasks[current_task].sp=tempSp;
-	
-	current_task = chooseNextTask();
-	tempSp=tasks[current_task].sp;
-	
-    RESTORE_CONTEXT(tempSp)
+	do_something_else();
     asm volatile("reti");
 }

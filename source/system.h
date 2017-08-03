@@ -21,18 +21,19 @@ typedef struct task_definition task_definition;
 
 class System {	
 	
-public:
-	static System& instance() { return _system; }
-	
-	int schedule_task(void* address, void* args);
-	void exit_task();
-	void sleep(int t);
-	
-	int run();
-
 private:
 	System();
 	static System _system;
+	
+public:
+	static System& instance() { return _system; }
+	
+	int run();
+	int schedule_task(void* address, void* args);
+	
+	void exit_task();
+	void sleep(int t);
+	
 };
 
 #endif
