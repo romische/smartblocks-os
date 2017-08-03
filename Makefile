@@ -4,7 +4,7 @@
 BOARD_TAG = smartblock-mainboard
 TARGET = firmware
 MCU = atmega328p
-F_CPU = 16000000UL
+F_CPU = 8000000UL
 HEX_MAXIMUM_SIZE = 30720
 
 ########################################################################

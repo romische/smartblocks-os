@@ -81,9 +81,9 @@ int main(void){
    System::instance().schedule_task((void*) dummy4, nullptr);
    
    char arg[] = {'-', 'o', '+', '.', '~'};
-   System::instance().schedule_task((void*) dummy2, (void*) arg ); //-
-   System::instance().schedule_task((void*) dummy2, (void*) arg+1 ); //~
-   System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //+
+   //System::instance().schedule_task((void*) dummy2, (void*) arg ); //-
+   //System::instance().schedule_task((void*) dummy2, (void*) arg+1 ); //~
+   //System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //+
    //System::instance().schedule_task((void*) dummy2, (void*) arg+3 ); //.
    //System::instance().schedule_task((void*) dummy2, (void*) arg+4 ); //o
    
