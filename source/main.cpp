@@ -50,15 +50,7 @@ void dummy3(){
 }
 
 void dummy4(){
-	CTimer timer(TCCR2A,
-               TCCR2A | (1 << WGM21) | (1 << WGM20),
-               TCCR2B,
-               TCCR2B | (1 << CS22),
-               TIMSK2,
-               TIMSK2 | (1 << TOIE2),
-               TIFR2,
-               TCNT2,
-               TIMER2_OVF_vect_num);
+	CTimer timer = CTimer::instance();
 	int millis;
 	int last = (int) timer.GetMilliseconds();
 	while(true){
