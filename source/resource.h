@@ -1,6 +1,7 @@
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
+#include <avr/interrupt.h>
 
 class Resource {	
 	
