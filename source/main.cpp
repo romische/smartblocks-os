@@ -5,9 +5,9 @@
 
 
 /* Firmware Headers */
-#include <huart_controller.h>
-#include <timer.h>
-#include <system.h>
+#include "huart_controller.h"
+#include "timer.h"
+#include "system.h"
 
 
 void wait(){
@@ -73,11 +73,11 @@ int main(void){
    System::instance().schedule_task((void*) dummy4, nullptr);
    
    char arg[] = {'-', 'o', '+', '.', '~'};
-   //System::instance().schedule_task((void*) dummy2, (void*) arg ); //-
-   //System::instance().schedule_task((void*) dummy2, (void*) arg+1 ); //~
-   //System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //+
-   //System::instance().schedule_task((void*) dummy2, (void*) arg+3 ); //.
-   //System::instance().schedule_task((void*) dummy2, (void*) arg+4 ); //o
+   System::instance().schedule_task((void*) dummy2, (void*) arg ); //-
+   System::instance().schedule_task((void*) dummy2, (void*) arg+1 ); //o
+   System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //+
+   System::instance().schedule_task((void*) dummy2, (void*) arg+3 ); //.
+   System::instance().schedule_task((void*) dummy2, (void*) arg+4 ); //~
    
    
    //System::instance().schedule_task((void*) dummy3, nullptr);

@@ -2,11 +2,18 @@
 #define SYSTEM_H
 
 #include <stdint.h>
-#include <stdio.h>
+
+/*
+ *   A remark on MAX_TASKS
+ * ATMega has 2048 bytes of RAM.
+ * A part of it is used by the heap. You may want to adjust MAX_TASK depending on how great is 
+ * your heap just before calling system.run(). 
+ * If it is too big, the program will restart over and over.
+ */
 
 
 #define TASK_STACK_SIZE 256
-#define MAX_TASKS 4
+#define MAX_TASKS 5
 #define TICK_INTERVAL 10
 
 #define stackPointer uint8_t*

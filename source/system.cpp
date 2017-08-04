@@ -1,9 +1,8 @@
 #include "system.h"
 #include "context.h"
 
-
 #include <avr/interrupt.h>
-#include <string.h>
+#include <string.h>   //memset
 
 
 
