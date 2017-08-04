@@ -1,5 +1,6 @@
 #include "system.h"
 #include "context.h"
+#include "huart_controller.h"
 
 #include <avr/interrupt.h>
 #include <string.h>   //memset
@@ -8,8 +9,8 @@
 
 stackPointer stackTop;
 stackPointer tasksStackTop;
-
 stackPointer tempSp;
+
 task_definition tasks[MAX_TASKS];
 
 int task_count;
@@ -30,7 +31,6 @@ System::System(){
 	
 	task_count=0;
 	current_task=-1;
-	
 }
 
 /* 
@@ -45,7 +45,7 @@ int System::run(){
     TIMSK0 = _BV(OCIE0A); // enable timer compare interrupt
     sei();
 	
-	while(true){}  //to wait until 1st interrupt
+	while(true){}  //to wait when no task is running
 	return 0;
 }
 
@@ -110,6 +110,32 @@ void System::exit_task(){
 	do_something_else();
 }
 
+
+
+/*
+ * Set the variable "sleep_time" of the current task to be t.
+ * Then calls to do_something_else
+ */
+void System::sleep(int t){
+	tasks[current_task].sleep_time=t;
+	do_something_else();
+}
+
+
+
+/*
+ * Decrement the variable "sleep_time" of each sleeping task.
+ * Will be called by the ISR so every TICK_INTERVAL ms.
+ */
+void update_sleep_time(){
+    for(int i = 0; i<task_count; i++){
+	    if(tasks[i].running && tasks[i].sleep_time>0)
+	    	tasks[i].sleep_time-= TICK_INTERVAL;
+	}
+}
+
+
+
 /*
  * Returns the index in the task array of the next task to run, which must be running and not sleeping
  * If none is found, return -1
@@ -136,11 +162,18 @@ void do_something_else() {
 
     SAVE_CONTEXT(tempSp)
 
-    if(current_task != -1) 
+    if(current_task == -1) 
+    	stackTop = tempSp;
+    else
 		tasks[current_task].sp=tempSp;
+		
 
 	current_task = chooseNextTask();
-	tempSp=tasks[current_task].sp;
+
+    if(current_task == -1) 
+    	tempSp = stackTop;
+    else
+		tempSp=tasks[current_task].sp;
 
     RESTORE_CONTEXT(tempSp)
     sei();
@@ -151,6 +184,8 @@ void do_something_else() {
  * Interrupt Service Routine of Timer0.
  */
 ISR(TIMER0_COMPA_vect, ISR_NAKED) {
+	cli();
+	 update_sleep_time();
 	do_something_else();
     asm volatile("reti");
 }

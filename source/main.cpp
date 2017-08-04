@@ -10,22 +10,13 @@
 #include "system.h"
 
 
-void wait(){
-	for(int j=0; j<1000; j++){
-		asm volatile("nop");
-	}
-
-}
-
-
-
 void dummy2(void* arg){
 	char c = *((char*) arg);
 	while(true){
 		HardwareSerial::instance().lock();
 		HardwareSerial::instance().Write(c);
 		HardwareSerial::instance().unlock();
-		wait();
+		System::instance().sleep(100);
 	}
 }
 
@@ -34,7 +25,7 @@ void dummy1(){
 		HardwareSerial::instance().lock();
 		printf("%d_",i);
 		HardwareSerial::instance().unlock();
-		wait();
+		System::instance().sleep(100);
 		if(i==100){
 			char arg = '6';
 			System::instance().schedule_task((void*) dummy2, (void*) &arg ); 
@@ -49,18 +40,15 @@ void dummy3(){
 	System::instance().exit_task();
 }
 
-void dummy4(){
+
+void dummy5(){
 	CTimer timer = CTimer::instance();
 	int millis;
-	int last = (int) timer.GetMilliseconds();
 	while(true){
-		millis = (int) timer.GetMilliseconds();
-		if(millis-last >1000){
-			last = millis;
-			HardwareSerial::instance().lock();
-			printf("Uptime = %d\r\n", millis);
-			HardwareSerial::instance().unlock();
-		}
+		HardwareSerial::instance().lock();
+		printf("Uptime = %d\r\n", timer.GetMilliseconds());
+		HardwareSerial::instance().unlock();
+		System::instance().sleep(1000);
 	}
 }
 
@@ -70,7 +58,7 @@ int main(void){
    
    //
    
-   System::instance().schedule_task((void*) dummy4, nullptr);
+   System::instance().schedule_task((void*) dummy5, nullptr);
    
    char arg[] = {'-', 'o', '+', '.', '~'};
    System::instance().schedule_task((void*) dummy2, (void*) arg ); //-
@@ -87,22 +75,4 @@ int main(void){
    
 }
 
-
-
-
-/*
-to initialize the timer : 
-
-m_cTimer(TCCR2A,
-               TCCR2A | (1 << WGM21) | (1 << WGM20),
-               TCCR2B,
-               TCCR2B | (1 << CS22),
-               TIMSK2,
-               TIMSK2 | (1 << TOIE2),
-               TIFR2,
-               TCNT2,
-               TIMER2_OVF_vect_num)
-
-
-*/
 
