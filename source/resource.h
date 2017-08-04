@@ -2,16 +2,17 @@
 #define RESOURCE_H
 
 #include <avr/interrupt.h>
+#include "system.h"
 
 class Resource {	
 	
 public:
 
 	//Resource() : locked(false) {}
-	//seems to work without the constructor..
+	//seem to work without it...
 	
-	bool get_lock_value(){ return locked;}
 
+	/* WARNING : this MUST be used in the context of multitask */
 	void lock(){
 		while (true){
 			if(!locked){
@@ -23,8 +24,8 @@ public:
 				}
 				sei();
 			}
+			System::instance().yield();
 		}
-		//sleep();
 	}	
 	
 	void unlock(){
