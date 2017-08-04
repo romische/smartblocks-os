@@ -110,11 +110,19 @@ void System::exit_task(){
 	do_something_else();
 }
 
+/*
+ * "pause" the task by calling to do_something_else
+ */
+void System::yield(){
+	do_something_else();
+}
 
 
 /*
  * Set the variable "sleep_time" of the current task to be t.
- * Then calls to do_something_else
+ * Then calls to do_something_else.
+ *   remark: It's not something exact because round the sleep time by TICK_INTERVAL,
+ *   plus the interrupt is not guaranteed to be triggered at the exact good time
  */
 void System::sleep(int t){
 	tasks[current_task].sleep_time=t;
@@ -161,19 +169,15 @@ void do_something_else() {
     cli();
 
     SAVE_CONTEXT(tempSp)
-
-    if(current_task == -1) 
-    	stackTop = tempSp;
-    else
-		tasks[current_task].sp=tempSp;
+	
+    if(current_task == -1)	stackTop = tempSp;
+    else 					tasks[current_task].sp=tempSp;
 		
-
 	current_task = chooseNextTask();
 
-    if(current_task == -1) 
-    	tempSp = stackTop;
-    else
-		tempSp=tasks[current_task].sp;
+    if(current_task == -1) 	tempSp = stackTop;
+    else 					tempSp=tasks[current_task].sp;
+
 
     RESTORE_CONTEXT(tempSp)
     sei();
@@ -185,7 +189,19 @@ void do_something_else() {
  */
 ISR(TIMER0_COMPA_vect, ISR_NAKED) {
 	cli();
-	 update_sleep_time();
-	do_something_else();
+
+    SAVE_CONTEXT(tempSp)
+    
+	update_sleep_time();
+	
+    if(current_task == -1)	stackTop = tempSp;
+    else 					tasks[current_task].sp=tempSp;
+		
+	current_task = chooseNextTask();
+
+    if(current_task == -1) 	tempSp = stackTop;
+    else 					tempSp=tasks[current_task].sp;
+
+    RESTORE_CONTEXT(tempSp)
     asm volatile("reti");
 }

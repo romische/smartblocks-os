@@ -16,7 +16,7 @@ void dummy2(void* arg){
 		HardwareSerial::instance().lock();
 		HardwareSerial::instance().Write(c);
 		HardwareSerial::instance().unlock();
-		System::instance().sleep(100);
+		System::instance().yield();
 	}
 }
 
@@ -56,15 +56,14 @@ int main(void){
 	
    stdout = HardwareSerial::instance().get_file();
    
-   //
    
    System::instance().schedule_task((void*) dummy5, nullptr);
    
-   char arg[] = {'-', 'o', '+', '.', '~'};
-   System::instance().schedule_task((void*) dummy2, (void*) arg ); //-
+   char arg[] = {'#', 'o', '-', '>', '~'};
+   System::instance().schedule_task((void*) dummy2, (void*) arg ); //#
    System::instance().schedule_task((void*) dummy2, (void*) arg+1 ); //o
-   System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //+
-   System::instance().schedule_task((void*) dummy2, (void*) arg+3 ); //.
+   System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //-
+   System::instance().schedule_task((void*) dummy2, (void*) arg+3 ); //>
    System::instance().schedule_task((void*) dummy2, (void*) arg+4 ); //~
    
    

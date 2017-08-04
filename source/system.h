@@ -39,6 +39,7 @@ public:
 	int schedule_task(void* address, void* args);
 	
 	void exit_task();
+	void yield();
 	void sleep(int t);
 	
 };
