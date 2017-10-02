@@ -1,8 +1,8 @@
 #!/bin/sh
 
-echo "~~ si probleme: sudo chmod a+rw /dev/ttyUSB0"
-echo "~~ running avrdude & picocom."
-echo "~~ to exit program: stop: ctrl+a+x"
+echo "~~ This script compile the firmware w/ make - then load it on ttyUSB0 w/ avrdude - then send/receive data w/ picocom."
+echo "~~ si probleme: sudo chmod a+rw /dev/ttyUSB0 ou (mieux): sudo adduser *user* dialout"
+echo "~~ to exit program: CTRL-a-x"
 
 echo "\n~~~~~~~~~~~~ make"
 make
