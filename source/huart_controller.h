@@ -20,23 +20,43 @@
   Modified 14 August 2012 by Alarus
 */
 
-#ifndef HardwareSerial_h
-#define HardwareSerial_h
+#ifndef HUART_CONTROLLER_H
+#define HUART_CONTROLLER_H
 
 #include <inttypes.h>
 #include <stdio.h>
 #include "resource.h"
 
-//#include <Stream.h>
-//#include <Timer.h>
+#define SERIAL_BUFFER_SIZE 64
 
-struct ring_buffer;
-
-class HardwareSerial : public Resource
+class CHUARTController : public Resource // public CInputStream, public COutputStream { // BASIC! contains only ring buffer
 {
+public:
+   struct SRingBuffer
+   {
+      uint8_t buffer[SERIAL_BUFFER_SIZE];
+      volatile unsigned int head;
+      volatile unsigned int tail;
+   };
+
+   static CHUARTController& instance() {
+      return _hardware_serial;
+   }
+
+   void Begin(unsigned long);
+   void End();
+   virtual int Available(void);
+   virtual int Peek(void);
+   virtual uint8_t Read(void);
+   virtual void Flush(void);
+
+   virtual uint8_t Write(uint8_t);
+   
+   FILE* get_file(){return &mystdout;}
+
 private:
-   ring_buffer *_rx_buffer;
-   ring_buffer *_tx_buffer;
+   SRingBuffer *_rx_buffer;
+   SRingBuffer *_tx_buffer;
    volatile uint8_t *_ubrrh;
    volatile uint8_t *_ubrrl;
    volatile uint8_t *_ucsra;
@@ -51,48 +71,14 @@ private:
    bool transmitting;
    FILE mystdout;
 
-public:
-
-   static HardwareSerial& instance() {
-      return _hardware_serial;
-   }
-   
-   FILE* get_file(){return &mystdout;}
-
-   void Begin(unsigned long);
-   void End();
-   virtual int Available(void);
-   virtual int Peek(void);
-   virtual int Read(void);
-   virtual void Flush(void);
-   
-   /*
-   uint8_t Write(const uint8_t* data, uint8_t count) {
-      for(uint8_t i = 0; i < count; i++) {
-         write(data[i]);
-      }
-      return count;
-   }
-   */
-
-   virtual uint8_t Write(uint8_t);
-   //inline size_t write(unsigned long n) { return write((uint8_t)n); }
-   //inline size_t write(long n) { return write((uint8_t)n); }
-   //inline size_t write(unsigned int n) { return write((uint8_t)n); }
-   //inline size_t write(int n) { return write((uint8_t)n); }
-   //using Print::write; // pull in write(str) and write(buf, size) from Print
-   
-
-   //operator bool();
-   
 
 private:
    
    /* singleton instance */
-   static HardwareSerial _hardware_serial;
+   static CHUARTController _hardware_serial;
 
    /* constructor */
-   HardwareSerial();
+   CHUARTController();
 };
 
 #endif

@@ -13,18 +13,18 @@
 void dummy2(void* arg){
 	char c = *((char*) arg);
 	while(true){
-		HardwareSerial::instance().lock();
-		HardwareSerial::instance().Write(c);
-		HardwareSerial::instance().unlock();
+		CHUARTController::instance().lock();
+		CHUARTController::instance().Write(c);
+		CHUARTController::instance().unlock();
 		System::instance().yield();
 	}
 }
 
 void dummy1(){
 	for(int i=0; ;i++){
-		HardwareSerial::instance().lock();
+		CHUARTController::instance().lock();
 		printf("%d_",i);
-		HardwareSerial::instance().unlock();
+		CHUARTController::instance().unlock();
 		System::instance().sleep(100);
 		if(i==100){
 			char arg = '6';
@@ -34,9 +34,9 @@ void dummy1(){
 }
 
 void dummy3(){
-	HardwareSerial::instance().lock();
+	CHUARTController::instance().lock();
 	printf("dummy3 ran and ended\r\n");
-	HardwareSerial::instance().unlock();
+	CHUARTController::instance().unlock();
 	System::instance().exit_task();
 }
 
@@ -45,16 +45,16 @@ void dummy5(){
 	CTimer timer = CTimer::instance();
 	int millis;
 	while(true){
-		HardwareSerial::instance().lock();
+		CHUARTController::instance().lock();
 		printf("Uptime = %d\r\n", timer.GetMilliseconds());
-		HardwareSerial::instance().unlock();
+		CHUARTController::instance().unlock();
 		System::instance().sleep(1000);
 	}
 }
 
 int main(void){
 	
-   stdout = HardwareSerial::instance().get_file();
+   stdout = CHUARTController::instance().get_file();
    
    
    System::instance().schedule_task((void*) dummy5, nullptr);
