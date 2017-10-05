@@ -3,15 +3,16 @@
 echo "~~ This script compile the firmware w/ make - then load it on ttyUSB0 w/ avrdude - then send/receive data w/ picocom."
 echo "~~ si probleme: sudo chmod a+rw /dev/ttyUSB0 ou (mieux): sudo adduser *user* dialout"
 echo "~~ to exit program: CTRL-a-x"
+echo "~~ /!\ if you run on arduino redboard fix baud rate (option -b) at 115200 " 
 
 echo "\n~~~~~~~~~~~~ make"
 make
 
 
 echo "\n~~~~~~~~~~~~ avrdude "
-avrdude -c arduino -p m328p -P /dev/ttyUSB0 -b 115200 -U flash:w:build/firmware.hex
+avrdude -c arduino -p m328p -P /dev/ttyUSB0 -b 57600 -U flash:w:build/firmware.hex
 
 
 
 echo "\n~~~~~~~~~~~~ picocom" 
-picocom -b 115200 /dev/ttyUSB0
+picocom -b 57600 /dev/ttyUSB0

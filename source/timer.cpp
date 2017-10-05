@@ -13,7 +13,7 @@ CTimer::CTimer(){
 	cli();    
     TCCR2A = _BV(COM2A1) | _BV(WGM21);
     TCCR2B = _BV(CS22); //64 prescaler
-    OCR2A = 2*F_CPU / 64 / (1000 ); // F_CPU = 8000000 but works at 16000000...??
+    OCR2A = F_CPU / 64 / (1000 ); 
     TIMSK2 = _BV(OCIE2A); // enable timer compare interrupt
     sei();
 }

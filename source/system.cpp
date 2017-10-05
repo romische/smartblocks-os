@@ -41,7 +41,7 @@ int System::run(){
 	cli();    
     TCCR0A = _BV(COM0A1) | _BV(WGM01);
     TCCR0B = _BV(CS02) | _BV(CS00); //1024 prescaler
-    OCR0A = 2*F_CPU / 1024 / (1000 / TICK_INTERVAL); // F_CPU = 8000000 but works at 16000000...??
+    OCR0A = F_CPU / 1024 / (1000 / TICK_INTERVAL); 
     TIMSK0 = _BV(OCIE0A); // enable timer compare interrupt
     sei();
 	

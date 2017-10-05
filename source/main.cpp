@@ -60,12 +60,13 @@ int main(void){
    System::instance().schedule_task((void*) dummy5, nullptr);
    
    char arg[] = {'#', 'o', '-', '>', '~'};
+   /*
    System::instance().schedule_task((void*) dummy2, (void*) arg ); //#
    System::instance().schedule_task((void*) dummy2, (void*) arg+1 ); //o
    System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //-
    System::instance().schedule_task((void*) dummy2, (void*) arg+3 ); //>
    System::instance().schedule_task((void*) dummy2, (void*) arg+4 ); //~
-   
+   */
    
    //System::instance().schedule_task((void*) dummy3, nullptr);
    
