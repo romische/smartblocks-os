@@ -72,3 +72,5 @@ DO NOT use outside the multitask context.
    SREG = oldSREG;
 ```
 (because we don't know if interrupts are disabled or activated when calling cli)
+
+- Globally, throw and catch error codes (for example the 3 functions in system who return void...)
