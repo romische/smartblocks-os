@@ -7,7 +7,8 @@ augmented with multitask support inspired by https://github.com/chrismoos/avr-os
 
 
 # hardware
-Implemented on a Redboard (Sparkfun) with microcontroller ATmega328 (the same as arduino uno).
+Implemented first on a Redboard (Sparkfun) with microcontroller ATmega328 (the same as arduino uno), then on the smartblocks.
+/!\ If you run on the Redboard, be sure to modify the ./run script as specified in it, and be aware that it will run 2 times faster (unless you change F_CPU to 2xF_CPU in the timer constructor and in system.run) 
 
 
 # file organisation
