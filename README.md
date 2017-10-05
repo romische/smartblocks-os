@@ -16,7 +16,7 @@ Implemented on a Redboard (Sparkfun) with microcontroller ATmega328 (the same as
  - *toolchain* contains the programs necessary for compilation (avr-g++, etc), referred by the Makefile. 
  - *run* is a small bash file that compiles and run the software on the redboard. (needs avrdude and picocom installed)
 
-# how does it work ?
+# how to use it ?
 
 See the [main](https://github.com/romische/smartblocks-os/blob/master/source/main.cpp) file for an example.
 
@@ -31,7 +31,7 @@ For creating a task, you need to declare a function like
 Then you can add those functions to the system, then start them all with :
 ```
     System::instance().schedule_task((void*) func, (void*) my_arg );   //or Object.func if member function
-                                                                       //returns -1 if not enough room for the task
+    //then run                                                         //returns -1 if not enough room for the task
     System::instance().run(); 
 ```
 
@@ -53,6 +53,12 @@ For locking resources, we use a simple non-blocking spinlock.
     HardwareSerial::instance().unlock();
 ```
 DO NOT use outside the multitask context.
+
+## --> make an object lockable
+Just make it inherit from Resource :
+```
+class CHUARTController : public Resource {  ...
+```
 
 # further improvements
 
