@@ -43,6 +43,9 @@ Inside those functions you can use
     void sleep(int t);
 ```
 
+If you need some initialization, I advise making one task "init" that will in turn add all the other tasks.
+
+*Why?* Because too much stuffs before system.run() would override the memory reserved for the tasks leading to a stack overflow (probable sign : the system will execute repeatitively the beginning of your code).
 
 ## --> use lockable resources
 
@@ -63,13 +66,13 @@ class CHUARTController : public Resource {  ...
 
 # further improvements
 
+- In [system.cpp](https://github.com/romische/smartblocks-os/blob/master/source/system.cpp) : Make the reservation of stack space for the tasks be in the run() function instead of the constructor of System. The actual implementation may cause problem if too much stack space is used before calling run().
+
 - Refactor the code in [system.cpp](https://github.com/romische/smartblocks-os/blob/master/source/system.cpp) to make it more C++ (it contains global variables, the ISR macro instead of a class representing interrupts, the void* pointers, etc)
 
 - Add comments wherever there is assembly code
 
 - In [system.cpp](https://github.com/romische/smartblocks-os/blob/master/source/system.cpp) : Make the sleep() function of System more exact. Now it can have an error of + or - 10 ms (for lightweight and easy design)
-
-- In [system.cpp](https://github.com/romische/smartblocks-os/blob/master/source/system.cpp) : Make the reservation of stack space for the tasks be in the run() function instead of the constructor of System. The actual implementation may cause problem if too much stack space is used before calling run().
 
 - Change all "cli() [...] sei()" into 
 ```
