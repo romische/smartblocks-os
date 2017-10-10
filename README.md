@@ -61,6 +61,7 @@ DO NOT use outside the multitask context.
 ## --> make an object lockable
 Just make it inherit from Resource :
 ```
+#include "resource.h"
 class CHUARTController : public Resource {  ...
 ```
 
