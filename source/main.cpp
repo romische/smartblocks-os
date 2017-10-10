@@ -74,7 +74,6 @@ void TestAccelerometer(int arg) {
 
 /******************************************** PortController ******************************************/
 
-CPortController m_cPortController;
 
 CPortController::EPort m_peAllPorts[NUM_PORTS] {
       CPortController::EPort::NORTH,
@@ -124,7 +123,7 @@ const char* GetPortString(CPortController::EPort ePort) {
 
 void TestPortController() {
    for(CPortController::EPort& ePort : m_peAllPorts) {
-      if(m_cPortController.IsPortConnected(ePort)) {
+      if(CPortController::instance().IsPortConnected(ePort)) {
          for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
             if(eConnectedPort == CPortController::EPort::NULLPORT) {
                eConnectedPort = ePort;
@@ -133,7 +132,7 @@ void TestPortController() {
          }         
       }
    }
-   m_cPortController.SelectPort(CPortController::EPort::NULLPORT);
+   CPortController::instance().SelectPort(CPortController::EPort::NULLPORT);
    
    CHUARTController::instance().lock();
    printf("Connected Ports: ");
@@ -167,7 +166,6 @@ void dummy5(){
 int main(void){
 	
    stdout = CHUARTController::instance().get_file();
-   m_cPortController = CPortController();
    
    
    System::instance().schedule_task((void*) TestPortController, nullptr);

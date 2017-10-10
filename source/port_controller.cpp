@@ -6,6 +6,10 @@
 #define PORTC_TWCLK_MASK 0x20
 #define PORT_CTRL_MASK 0x0F
 
+//singleton instance
+CPortController CPortController::_port_controller; 
+
+
 CPortController::CPortInterrupt::CPortInterrupt(CPortController* pc_port_controller, uint8_t un_intr_vect_num) :
    m_pcPortController(pc_port_controller) {
    Register(this, un_intr_vect_num);

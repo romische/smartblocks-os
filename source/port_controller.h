@@ -29,7 +29,9 @@ public:
       NULLPORT = 8
    };
 public:
-   CPortController();
+   static CPortController& instance() {
+      return _port_controller;
+   }
 
    void Init();
    
@@ -46,7 +48,10 @@ public:
    bool IsPortConnected(EPort e_target);
 
 private:
+   static CPortController _port_controller; //singleton instance
+   CPortController();
    
+private:
    enum class EPCA9554Register : uint8_t {
       INPUT          = 0x00, // R
       OUTPUT         = 0x01, // R/W
