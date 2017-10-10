@@ -8,7 +8,8 @@ augmented with multitask support inspired by https://github.com/chrismoos/avr-os
 
 # hardware
 Implemented first on a Redboard (Sparkfun) with microcontroller ATmega328 (the same as arduino uno), then on the smartblocks.
-/!\ If you run on the Redboard, be sure to modify the ./run script as specified in it, and be aware that it will run 2 times faster (unless you change F_CPU to 2xF_CPU in the timer constructor and in system.run) 
+
+> /!\ If you run on the Redboard, be sure to modify the ./run script as specified in it, and be aware that it will run 2 times faster (unless you change F_CPU to 2xF_CPU in the timer constructor and in system.run). Also, in that case, other controllers than HUARTcontrollers and timer make no sense, so remove them.
 
 
 # file organisation
@@ -21,8 +22,10 @@ Implemented first on a Redboard (Sparkfun) with microcontroller ATmega328 (the s
 
 See the [main](https://github.com/romische/smartblocks-os/blob/master/source/main.cpp) file for an example.
 
+Also here an overview on how to create a task, how to lock a resource and how to make an object lockable.
 
-## --> create a task
+**a. Create a task**
+
 For creating a task, you need to declare a function like
 ```
     void func();
@@ -45,9 +48,9 @@ Inside those functions you can use
 
 If you need some initialization, I advise making one task "init" that will in turn add all the other tasks.
 
-*Why?* Because too much stuffs before system.run() would override the memory reserved for the tasks leading to a stack overflow (probable sign : the system will execute repeatitively the beginning of your code).
+> *Why?* Because too much stuffs before system.run() would override the memory reserved for the tasks leading to a stack overflow (probable sign : the system will execute repeatitively the beginning of your code).
 
-## --> use lockable resources
+**b. Use lockable resources**
 
 For locking resources, we use a simple non-blocking spinlock.
 
@@ -58,7 +61,8 @@ For locking resources, we use a simple non-blocking spinlock.
 ```
 DO NOT use outside the multitask context.
 
-## --> make an object lockable
+**c. Make an object lockable**
+
 Just make it inherit from Resource :
 ```
 #include "resource.h"
