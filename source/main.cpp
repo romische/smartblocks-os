@@ -3,15 +3,18 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-
 /* Firmware Headers */
-#include "huart_controller.h"
-#include "timer.h"
 #include "system.h"
+#include "timer.h"
+#include "huart_controller.h"
 #include "tw_controller.h"
+#include "port_controller.h"
 
 /* I2C Address Space */
 #define MPU6050_ADDR 0x68
+
+
+/******************************************** Accelerometer ******************************************/
 
 enum class EMPU6050Register : uint8_t {
    /* MPU6050 Registers */
@@ -69,36 +72,83 @@ void TestAccelerometer(int arg) {
 	}
 }
 
-void dummy2(void* arg){
-	char c = *((char*) arg);
-	while(true){
-		CHUARTController::instance().lock();
-		CHUARTController::instance().Write(c);
-		CHUARTController::instance().unlock();
-		System::instance().yield();
-	}
+/******************************************** PortController ******************************************/
+
+CPortController m_cPortController;
+
+CPortController::EPort m_peAllPorts[NUM_PORTS] {
+      CPortController::EPort::NORTH,
+      CPortController::EPort::EAST,
+      CPortController::EPort::SOUTH,
+      CPortController::EPort::WEST,
+      CPortController::EPort::TOP,
+      CPortController::EPort::BOTTOM,
+   };
+
+CPortController::EPort m_peConnectedPorts[NUM_PORTS] {
+      CPortController::EPort::NULLPORT,
+      CPortController::EPort::NULLPORT,
+      CPortController::EPort::NULLPORT,
+      CPortController::EPort::NULLPORT,
+      CPortController::EPort::NULLPORT,
+      CPortController::EPort::NULLPORT,
+   };
+
+
+const char* GetPortString(CPortController::EPort ePort) {
+   switch(ePort) {
+   case CPortController::EPort::NORTH:
+      return "NORTH";
+      break;
+   case CPortController::EPort::EAST:
+      return "EAST";
+      break;
+   case CPortController::EPort::SOUTH:
+      return "SOUTH";
+      break;
+   case CPortController::EPort::WEST:
+      return "WEST";
+      break;
+   case CPortController::EPort::TOP:
+      return "TOP";
+      break;
+   case CPortController::EPort::BOTTOM:
+      return "BOTTOM";
+      break;
+   default:
+      return "INVALID";
+      break;
+   }
 }
 
-void dummy1(){
-	for(int i=0; ;i++){
-		CHUARTController::instance().lock();
-		printf("%d_",i);
-		CHUARTController::instance().unlock();
-		System::instance().sleep(100);
-		if(i==100){
-			char arg = '6';
-			System::instance().schedule_task((void*) dummy2, (void*) &arg ); 
-		}
-	}
+
+void TestPortController() {
+   for(CPortController::EPort& ePort : m_peAllPorts) {
+      if(m_cPortController.IsPortConnected(ePort)) {
+         for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
+            if(eConnectedPort == CPortController::EPort::NULLPORT) {
+               eConnectedPort = ePort;
+               break;
+            }
+         }         
+      }
+   }
+   m_cPortController.SelectPort(CPortController::EPort::NULLPORT);
+   
+   CHUARTController::instance().lock();
+   printf("Connected Ports: ");
+   for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
+      if(eConnectedPort != CPortController::EPort::NULLPORT) {
+         printf("%s ", GetPortString(eConnectedPort));
+      }
+   }
+   CHUARTController::instance().unlock();
+   
+   
+   System::instance().exit_task();
 }
 
-void dummy3(){
-	CHUARTController::instance().lock();
-	printf("dummy3 ran and ended\r\n");
-	CHUARTController::instance().unlock();
-	System::instance().exit_task();
-}
-
+/******************************************** Others ******************************************/
 
 void dummy5(){
 	CTimer timer = CTimer::instance();
@@ -111,31 +161,20 @@ void dummy5(){
 	}
 }
 
+
+/******************************************** Main ******************************************/
+
 int main(void){
 	
    stdout = CHUARTController::instance().get_file();
+   m_cPortController = CPortController();
    
    
-   System::instance().schedule_task((void*) dummy5, nullptr);
-   /*
-   char arg[] = {'#', 'o', '-', '>', '~'};
-   System::instance().schedule_task((void*) dummy2, (void*) arg ); //#
-   System::instance().schedule_task((void*) dummy2, (void*) arg+1 ); //o
-   System::instance().schedule_task((void*) dummy2, (void*) arg+2 ); //-
-   System::instance().schedule_task((void*) dummy2, (void*) arg+3 ); //>
-   System::instance().schedule_task((void*) dummy2, (void*) arg+4 ); //~
-   */
+   System::instance().schedule_task((void*) TestPortController, nullptr);
    
-   int zero = 0;
-   int one = 1;
-   System::instance().schedule_task((void*) TestAccelerometer, (void*) zero );
-   System::instance().schedule_task((void*) TestAccelerometer, (void*) one );
    
    printf("\r\n\r\nStarting the program...\r\n");
    return System::instance().run();  
-
-
-   //return 0;
 }
 
 
