@@ -9,12 +9,23 @@
 #include "huart_controller.h"
 #include "tw_controller.h"
 #include "port_controller.h"
+#include "led_controller.h"
 
-/* I2C Address Space */
-#define MPU6050_ADDR 0x68
+
+
+void TestAccelerometer(int arg);
+const char* GetPortString(CPortController::EPort ePort);
+void TestPortController();
+void SetAllColorsOnFace(uint8_t unRed, uint8_t unGreen, uint8_t unBlue);
+void SetAllModesOnFace(CLEDController::EMode e_mode);
+void TestLEDs();
+void dummy5();
 
 
 /******************************************** Accelerometer ******************************************/
+
+/* I2C Address Space */
+#define MPU6050_ADDR 0x68
 
 enum class EMPU6050Register : uint8_t {
    /* MPU6050 Registers */
@@ -122,6 +133,12 @@ const char* GetPortString(CPortController::EPort ePort) {
 
 
 void TestPortController() {
+
+   CPortController::instance().SelectPort(CPortController::EPort::NULLPORT);
+   System::instance().sleep(10);
+   CPortController::instance().Init();
+
+
    for(CPortController::EPort& ePort : m_peAllPorts) {
       if(CPortController::instance().IsPortConnected(ePort)) {
          for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
@@ -134,6 +151,7 @@ void TestPortController() {
    }
    CPortController::instance().SelectPort(CPortController::EPort::NULLPORT);
    
+   //print result
    CHUARTController::instance().lock();
    printf("Connected Ports: ");
    for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
@@ -141,11 +159,115 @@ void TestPortController() {
          printf("%s ", GetPortString(eConnectedPort));
       }
    }
+   printf("\r\n");
    CHUARTController::instance().unlock();
+   
+   System::instance().schedule_task((void*) TestLEDs, nullptr);
+   System::instance().exit_task();
+}
+
+
+/******************************************** Leds ******************************************/
+
+#define RGB_RED_OFFSET    0
+#define RGB_GREEN_OFFSET  1
+#define RGB_BLUE_OFFSET   2
+#define RGB_UNUSED_OFFSET 3
+
+#define RGB_LEDS_PER_FACE 4
+
+
+void SetAllColorsOnFace(uint8_t unRed, uint8_t unGreen, uint8_t unBlue) {
+
+   for(uint8_t unLedIdx = 0; unLedIdx < RGB_LEDS_PER_FACE; unLedIdx++) {
+      CLEDController::SetBrightness(unLedIdx * RGB_LEDS_PER_FACE +
+                                    RGB_RED_OFFSET, unRed);
+      CLEDController::SetBrightness(unLedIdx * RGB_LEDS_PER_FACE +
+                                    RGB_GREEN_OFFSET, unGreen);
+      CLEDController::SetBrightness(unLedIdx * RGB_LEDS_PER_FACE +
+                                    RGB_BLUE_OFFSET, unBlue);
+   }
+}
+
+
+void SetAllModesOnFace(CLEDController::EMode e_mode) {
+
+   for(uint8_t unLedIdx = 0; unLedIdx < RGB_LEDS_PER_FACE; unLedIdx++) {
+      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE 
+                              + RGB_RED_OFFSET, e_mode);
+      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE +
+                              RGB_GREEN_OFFSET, e_mode);
+      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE +
+                              RGB_BLUE_OFFSET, e_mode);
+      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE +
+                              RGB_UNUSED_OFFSET, CLEDController::EMode::OFF);
+   }
+}
+
+
+void TestLEDs() {
+	//Init leds
+  for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
+      if(eConnectedPort != CPortController::EPort::NULLPORT) {
+         CPortController::instance().SelectPort(eConnectedPort);
+         CLEDController::Init();
+         SetAllModesOnFace(CLEDController::EMode::PWM);
+         SetAllColorsOnFace(0x01,0x01,0x00);
+         CPortController::instance().EnablePort(eConnectedPort);  //whut why?
+      }
+   }
+	
+
+	//foreach color
+   for(uint8_t unColor = 0; unColor < 3; unColor++) {
+   	
+	   CHUARTController::instance().lock();
+	   printf("color %d\r\n", unColor);
+	   CHUARTController::instance().unlock();
+	   
+   	  //set color and increase brightness
+      for(uint8_t unVal = 0x00; unVal < 0x40; unVal++) {
+         for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
+            if(eConnectedPort != CPortController::EPort::NULLPORT) {
+               CPortController::instance().SelectPort(eConnectedPort);
+               CLEDController::SetBrightness(unColor + 0, unVal);
+               CLEDController::SetBrightness(unColor + 4, unVal);
+               CLEDController::SetBrightness(unColor + 8, unVal);
+               CLEDController::SetBrightness(unColor + 12, unVal);
+            }
+         }
+         System::instance().sleep(1);
+      }
+   	  //then decrease brightness
+      for(uint8_t unVal = 0x40; unVal > 0x00; unVal--) {
+         for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
+            if(eConnectedPort != CPortController::EPort::NULLPORT) {
+               CPortController::instance().SelectPort(eConnectedPort);
+               CLEDController::SetBrightness(unColor + 0, unVal);
+               CLEDController::SetBrightness(unColor + 4, unVal);
+               CLEDController::SetBrightness(unColor + 8, unVal);
+               CLEDController::SetBrightness(unColor + 12, unVal);
+            }  
+         }
+         System::instance().sleep(1);
+      }
+      //and finally turn it off
+      for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
+         if(eConnectedPort != CPortController::EPort::NULLPORT) {
+            CLEDController::SetBrightness(unColor + 0, 0x00);
+            CLEDController::SetBrightness(unColor + 4, 0x00);
+            CLEDController::SetBrightness(unColor + 8, 0x00);
+            CLEDController::SetBrightness(unColor + 12, 0x00);
+         }
+      }
+   }
+   
+   //why is it still on the default color while we just turn them on? 
    
    
    System::instance().exit_task();
 }
+
 
 /******************************************** Others ******************************************/
 
