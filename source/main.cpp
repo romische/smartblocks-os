@@ -12,7 +12,7 @@
 #include "led_controller.h"
 
 
-
+bool InitMPU6050();
 void TestAccelerometer(int arg);
 const char* GetPortString(CPortController::EPort ePort);
 void TestPortController();
@@ -41,6 +41,25 @@ enum class EMPU6050Register : uint8_t {
    TEMP_OUT_L     = 0x42, // R  
    WHOAMI         = 0x75  // R
 };
+
+
+bool InitMPU6050() {
+   /* Probe */
+   CTWController::GetInstance().BeginTransmission(MPU6050_ADDR);
+   CTWController::GetInstance().Write(static_cast<uint8_t>(EMPU6050Register::WHOAMI));
+   CTWController::GetInstance().EndTransmission(false);
+   CTWController::GetInstance().Read(MPU6050_ADDR, 1, true);
+         
+   if(CTWController::GetInstance().Read() != MPU6050_ADDR) 
+      return false;
+   /* select internal clock, disable sleep/cycle mode, enable temperature sensor*/
+   CTWController::GetInstance().BeginTransmission(MPU6050_ADDR);
+   CTWController::GetInstance().Write(static_cast<uint8_t>(EMPU6050Register::PWR_MGMT_1));
+   CTWController::GetInstance().Write(0x00);
+   CTWController::GetInstance().EndTransmission(true);
+
+   return true;
+}
 	
 void TestAccelerometer(int arg) {
 	while(true){
@@ -54,6 +73,8 @@ void TestAccelerometer(int arg) {
 	   CTWController::GetInstance().Write(static_cast<uint8_t>(EMPU6050Register::ACCEL_XOUT_H));
 	   CTWController::GetInstance().EndTransmission(false);
 	   CTWController::GetInstance().Read(MPU6050_ADDR, 8, true);
+	   // no need for CTWController::GetInstance().EndTransmission(true);
+	   
 	   /* Read the requested 8 bytes */
 	   for(uint8_t i = 0; i < 8; i++) {
 		  punMPU6050Res[i] = CTWController::GetInstance().Read();
@@ -80,6 +101,7 @@ void TestAccelerometer(int arg) {
 		       CTimer::instance().GetMilliseconds());  
 	   CHUARTController::instance().Flush();
 	   CHUARTController::instance().unlock();
+		System::instance().sleep(1000);
 	}
 }
 
@@ -286,11 +308,13 @@ void dummy5(){
 /******************************************** Main ******************************************/
 
 int main(void){
+
+   InitMPU6050();
 	
    stdout = CHUARTController::instance().get_file();
    
    
-   System::instance().schedule_task((void*) TestPortController, nullptr);
+   System::instance().schedule_task((void*) TestAccelerometer, nullptr);
    
    
    printf("\r\n\r\nStarting the program...\r\n");
