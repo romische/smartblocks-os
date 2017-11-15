@@ -128,34 +128,6 @@ CPortController::EPort m_peConnectedPorts[NUM_PORTS] {
       CPortController::EPort::NULLPORT,
    };
 
-
-const char* GetPortString(CPortController::EPort ePort) {
-   switch(ePort) {
-   case CPortController::EPort::NORTH:
-      return "NORTH";
-      break;
-   case CPortController::EPort::EAST:
-      return "EAST";
-      break;
-   case CPortController::EPort::SOUTH:
-      return "SOUTH";
-      break;
-   case CPortController::EPort::WEST:
-      return "WEST";
-      break;
-   case CPortController::EPort::TOP:
-      return "TOP";
-      break;
-   case CPortController::EPort::BOTTOM:
-      return "BOTTOM";
-      break;
-   default:
-      return "INVALID";
-      break;
-   }
-}
-
-
 void TestPortController() {
 
    CPortController::instance().SelectPort(CPortController::EPort::NULLPORT);
@@ -180,7 +152,7 @@ void TestPortController() {
    printf("Connected Ports: ");
    for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
       if(eConnectedPort != CPortController::EPort::NULLPORT) {
-         printf("%s ", GetPortString(eConnectedPort));
+         printf("%s ", CPortController::instance().GetPortString(eConnectedPort));
       }
    }
    printf("\r\n");

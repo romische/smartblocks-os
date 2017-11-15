@@ -46,6 +46,8 @@ public:
    void SelectPort(EPort e_select);
 
    bool IsPortConnected(EPort e_target);
+   
+   const char* GetPortString(EPort ePort);
 
 private:
    static CPortController _port_controller; //singleton instance
