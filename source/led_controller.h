@@ -17,10 +17,15 @@ public:
    static void Init();
 
    static void SetMode(uint8_t un_led, EMode e_mode);
-
    static void SetBrightness(uint8_t un_led, uint8_t un_val);
 
+   static void SetColor(uint8_t un_led_pack, uint8_t unRed, uint8_t unGreen, uint8_t unBlue); 
+
    static void SetBlinkRate(uint8_t un_period, uint8_t un_duty_cycle);
+   
+   
+   static void SetAllColorsOnFace(uint8_t unRed, uint8_t unGreen, uint8_t unBlue);
+   static void SetAllModesOnFace(EMode e_mode);
 
 private:
 

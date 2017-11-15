@@ -7,6 +7,14 @@
 #define PCA963X_DEV_ADDR  0x18
 #define PCA963X_LEDOUTX_MASK 0x03
 
+
+#define RGB_RED_OFFSET    0
+#define RGB_GREEN_OFFSET  1
+#define RGB_BLUE_OFFSET   2
+#define RGB_UNUSED_OFFSET 3
+
+#define RGB_LEDS_PER_FACE 4
+
 void CLEDController::Init() {
    /* Send the reset sequence */
    CTWController::GetInstance().BeginTransmission(PCA963X_RST_ADDR);
@@ -65,6 +73,12 @@ void CLEDController::SetBrightness(uint8_t un_led, uint8_t un_val) {
    CTWController::GetInstance().EndTransmission(true);
 }
 
+void CLEDController::SetColor(uint8_t un_led_pack, uint8_t unRed, uint8_t unGreen, uint8_t unBlue){
+      SetBrightness(un_led_pack * RGB_LEDS_PER_FACE + RGB_RED_OFFSET, unRed);
+      SetBrightness(un_led_pack * RGB_LEDS_PER_FACE + RGB_GREEN_OFFSET, unGreen);
+      SetBrightness(un_led_pack * RGB_LEDS_PER_FACE + RGB_BLUE_OFFSET, unBlue);
+}
+
 void CLEDController::SetBlinkRate(uint8_t un_period, uint8_t un_duty_cycle) {
    CTWController::GetInstance().BeginTransmission(PCA963X_DEV_ADDR);
    CTWController::GetInstance().Write(static_cast<uint8_t>(ERegister::GRPFREQ));
@@ -76,3 +90,20 @@ void CLEDController::SetBlinkRate(uint8_t un_period, uint8_t un_duty_cycle) {
    CTWController::GetInstance().Write(un_duty_cycle);
    CTWController::GetInstance().EndTransmission(true);
 }
+
+
+void CLEDController::SetAllColorsOnFace(uint8_t unRed, uint8_t unGreen, uint8_t unBlue){
+	for(uint8_t unLedIdx = 0; unLedIdx < RGB_LEDS_PER_FACE; unLedIdx++)
+		CLEDController::SetColor(unLedIdx, unRed, unGreen, unBlue);
+}
+   
+void CLEDController::SetAllModesOnFace(EMode e_mode){
+   for(uint8_t unLedIdx = 0; unLedIdx < RGB_LEDS_PER_FACE; unLedIdx++) {
+      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE + RGB_RED_OFFSET, e_mode);
+      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE + RGB_GREEN_OFFSET, e_mode);
+      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE + RGB_BLUE_OFFSET, e_mode);
+      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE + RGB_UNUSED_OFFSET, CLEDController::EMode::OFF);
+   }
+
+}
+

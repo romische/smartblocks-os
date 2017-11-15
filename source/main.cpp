@@ -66,24 +66,26 @@ void TestAccelerometer(int arg) {
 	   /* Array for holding accelerometer result */
 	   uint8_t punMPU6050Res[8];
 		CHUARTController::instance().lock();
-		printf("task %d locking the TW\r\n",arg);
+		printf("task %d try to lock the TW\r\n",arg);
 		CHUARTController::instance().unlock();
 	   CTWController::GetInstance().lock();
+		CHUARTController::instance().lock();
+		printf("task %d locked the TW\r\n",arg);
+		CHUARTController::instance().unlock();
 	   CTWController::GetInstance().BeginTransmission(MPU6050_ADDR);
 	   CTWController::GetInstance().Write(static_cast<uint8_t>(EMPU6050Register::ACCEL_XOUT_H));
 	   CTWController::GetInstance().EndTransmission(false);
 	   CTWController::GetInstance().Read(MPU6050_ADDR, 8, true);
-	   // no need for CTWController::GetInstance().EndTransmission(true);
 	   
 	   /* Read the requested 8 bytes */
 	   for(uint8_t i = 0; i < 8; i++) {
 		  punMPU6050Res[i] = CTWController::GetInstance().Read();
 	   }
 	   
-		CHUARTController::instance().lock();
-		printf("task %d UNlocking the TW\r\n",arg);
-		CHUARTController::instance().unlock();
 		
+		CHUARTController::instance().lock();
+		printf("task %d UNlock the TW\r\n",arg);
+		CHUARTController::instance().unlock();
 	   CTWController::GetInstance().unlock();
 	   
 	   CHUARTController::instance().lock();
@@ -101,7 +103,7 @@ void TestAccelerometer(int arg) {
 		       CTimer::instance().GetMilliseconds());  
 	   CHUARTController::instance().Flush();
 	   CHUARTController::instance().unlock();
-		System::instance().sleep(1000);
+		//System::instance().sleep(1000);
 	}
 }
 
@@ -191,57 +193,28 @@ void TestPortController() {
 
 /******************************************** Leds ******************************************/
 
-#define RGB_RED_OFFSET    0
-#define RGB_GREEN_OFFSET  1
-#define RGB_BLUE_OFFSET   2
-#define RGB_UNUSED_OFFSET 3
-
-#define RGB_LEDS_PER_FACE 4
-
-
-void SetAllColorsOnFace(uint8_t unRed, uint8_t unGreen, uint8_t unBlue) {
-
-   for(uint8_t unLedIdx = 0; unLedIdx < RGB_LEDS_PER_FACE; unLedIdx++) {
-      CLEDController::SetBrightness(unLedIdx * RGB_LEDS_PER_FACE +
-                                    RGB_RED_OFFSET, unRed);
-      CLEDController::SetBrightness(unLedIdx * RGB_LEDS_PER_FACE +
-                                    RGB_GREEN_OFFSET, unGreen);
-      CLEDController::SetBrightness(unLedIdx * RGB_LEDS_PER_FACE +
-                                    RGB_BLUE_OFFSET, unBlue);
-   }
-}
-
-
-void SetAllModesOnFace(CLEDController::EMode e_mode) {
-
-   for(uint8_t unLedIdx = 0; unLedIdx < RGB_LEDS_PER_FACE; unLedIdx++) {
-      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE 
-                              + RGB_RED_OFFSET, e_mode);
-      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE +
-                              RGB_GREEN_OFFSET, e_mode);
-      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE +
-                              RGB_BLUE_OFFSET, e_mode);
-      CLEDController::SetMode(unLedIdx * RGB_LEDS_PER_FACE +
-                              RGB_UNUSED_OFFSET, CLEDController::EMode::OFF);
-   }
-}
-
 
 void TestLEDs() {
-	//Init leds
+  
+  //Init leds
   for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
       if(eConnectedPort != CPortController::EPort::NULLPORT) {
          CPortController::instance().SelectPort(eConnectedPort);
+     	 
          CLEDController::Init();
-         SetAllModesOnFace(CLEDController::EMode::PWM);
-         SetAllColorsOnFace(0x01,0x01,0x00);
+         CLEDController::SetAllModesOnFace(CLEDController::EMode::PWM);
+         CLEDController::SetAllColorsOnFace(0x01,0x01,0x02);
+         
          CPortController::instance().EnablePort(eConnectedPort);  //whut why?
       }
    }
+   
+   System::instance().sleep(1000);
 	
 
 	//foreach color
-   for(uint8_t unColor = 0; unColor < 3; unColor++) {
+	//red 0, green 1, blue 2, all 3
+   for(uint8_t unColor = 0; unColor < 4; unColor++) {
    	
 	   CHUARTController::instance().lock();
 	   printf("color %d\r\n", unColor);
@@ -252,10 +225,15 @@ void TestLEDs() {
          for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
             if(eConnectedPort != CPortController::EPort::NULLPORT) {
                CPortController::instance().SelectPort(eConnectedPort);
-               CLEDController::SetBrightness(unColor + 0, unVal);
-               CLEDController::SetBrightness(unColor + 4, unVal);
-               CLEDController::SetBrightness(unColor + 8, unVal);
-               CLEDController::SetBrightness(unColor + 12, unVal);
+         	   if(unColor==0)
+         	   	CLEDController::SetAllColorsOnFace(unVal,0x00,0x00);
+         	   else if (unColor==1)
+         	   	CLEDController::SetAllColorsOnFace(0x00,unVal,0x00);
+         	   else if (unColor==2)
+         	   	CLEDController::SetAllColorsOnFace(0x00,0x00,unVal);
+         	   else 
+         	   	CLEDController::SetAllColorsOnFace(unVal,unVal,unVal);
+         	   
             }
          }
          System::instance().sleep(1);
@@ -265,26 +243,27 @@ void TestLEDs() {
          for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
             if(eConnectedPort != CPortController::EPort::NULLPORT) {
                CPortController::instance().SelectPort(eConnectedPort);
-               CLEDController::SetBrightness(unColor + 0, unVal);
-               CLEDController::SetBrightness(unColor + 4, unVal);
-               CLEDController::SetBrightness(unColor + 8, unVal);
-               CLEDController::SetBrightness(unColor + 12, unVal);
+         	   if(unColor==0)
+         	   	CLEDController::SetAllColorsOnFace(unVal,0x00,0x00);
+         	   else if (unColor==1)
+         	   	CLEDController::SetAllColorsOnFace(0x00,unVal,0x00);
+         	   else if (unColor==2)
+         	   	CLEDController::SetAllColorsOnFace(0x00,0x00,unVal);
+         	   else 
+         	   	CLEDController::SetAllColorsOnFace(unVal,unVal,unVal);
             }  
          }
          System::instance().sleep(1);
       }
-      //and finally turn it off
-      for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
-         if(eConnectedPort != CPortController::EPort::NULLPORT) {
-            CLEDController::SetBrightness(unColor + 0, 0x00);
-            CLEDController::SetBrightness(unColor + 4, 0x00);
-            CLEDController::SetBrightness(unColor + 8, 0x00);
-            CLEDController::SetBrightness(unColor + 12, 0x00);
-         }
-      }
    }
    
-   //why is it still on the default color while we just turn them on? 
+   //finally set all colors on a low value
+   for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
+            if(eConnectedPort != CPortController::EPort::NULLPORT) {
+               CPortController::instance().SelectPort(eConnectedPort);
+               CLEDController::SetAllColorsOnFace(0x01,0x01,0x01);
+            }  
+   }
    
    
    System::instance().exit_task();
@@ -308,14 +287,18 @@ void dummy5(){
 /******************************************** Main ******************************************/
 
 int main(void){
-
-   InitMPU6050();
 	
    stdout = CHUARTController::instance().get_file();
    
+   //InitMPU6050();
    
-   System::instance().schedule_task((void*) TestAccelerometer, nullptr);
    
+   
+   System::instance().schedule_task((void*) TestPortController, nullptr);   
+   /*
+   System::instance().schedule_task((void*) TestAccelerometer, (void*) 2);   
+   System::instance().schedule_task((void*) TestAccelerometer, (void*) 7);
+   */
    
    printf("\r\n\r\nStarting the program...\r\n");
    return System::instance().run();  
