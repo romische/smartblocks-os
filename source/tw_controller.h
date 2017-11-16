@@ -65,6 +65,9 @@ public:
    static CTWController& GetInstance() {
       return m_cTWController;
    }
+   
+   uint8_t RegisterReadByte(uint8_t address, uint8_t un_register_name);
+   uint8_t RegisterWriteByte(uint8_t address, uint8_t un_register_name, uint8_t data);
 
 private:
 

@@ -448,3 +448,23 @@ void CTWController::Flush(void)
 }
 
 
+
+uint8_t CTWController::RegisterReadByte(uint8_t address, uint8_t un_register_name){
+   BeginTransmission(address);
+   Write(un_register_name);
+   EndTransmission(false);
+   Read(address, 1, true);
+   return Read();
+}
+   
+uint8_t CTWController::RegisterWriteByte(uint8_t address, uint8_t un_register_name, uint8_t data){
+   BeginTransmission(address);
+   if( Write(un_register_name) == 0)
+   	return 0;
+   if( Write(data) == 0)
+   	return 0;
+   EndTransmission(true);
+   return 1;
+}
+
+
