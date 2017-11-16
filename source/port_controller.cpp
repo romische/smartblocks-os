@@ -42,11 +42,13 @@ CPortController::CPortController() :
 
 void CPortController::Init() {
    /* Configure the port reset register */
+   CTWController::GetInstance().lock();
    CTWController::GetInstance().BeginTransmission(PCA9554_RST_ADDR);
    CTWController::GetInstance().Write(static_cast<uint8_t>(EPCA9554Register::CONFIG));
    /* Configure the reset lines to the faces as outputs (driven high by default) */
    CTWController::GetInstance().Write(0xC0);
    CTWController::GetInstance().EndTransmission(true);
+   CTWController::GetInstance().unlock();   
 
    /* Note: in next hardware revision disable all faces on init */
 
@@ -62,12 +64,14 @@ void CPortController::Init() {
 void CPortController::SynchronizeInterrupts() {
    if(bSynchronizeRequired) {
       /* read port */
-      CTWController::GetInstance().BeginTransmission(PCA9554_IRQ_ADDR);
+      CTWController::GetInstance().lock();
+   	  CTWController::GetInstance().BeginTransmission(PCA9554_IRQ_ADDR);
       CTWController::GetInstance().Write(static_cast<uint8_t>(EPCA9554Register::INPUT));
       CTWController::GetInstance().EndTransmission(false);  
       CTWController::GetInstance().Read(PCA9554_IRQ_ADDR, 1, true);
       bSynchronizeRequired = false;
       uint8_t unRegisterState = CTWController::GetInstance().Read();
+      CTWController::GetInstance().unlock();   
       /* append detected falling edges to the interrupt vector */
       m_unInterrupts |= (unRegisterState ^ m_unLastRegisterState) & (~unRegisterState);
       /* store the synchronized state for the next sync */
@@ -100,36 +104,44 @@ uint8_t CPortController::GetInterrupts() {
 /***********************************************************/
 
 void CPortController::EnablePort(EPort e_target_port) {
+   CTWController::GetInstance().lock();
    CTWController::GetInstance().BeginTransmission(PCA9554_RST_ADDR);
    CTWController::GetInstance().Write(static_cast<uint8_t>(EPCA9554Register::OUTPUT));
    CTWController::GetInstance().EndTransmission(false);
    CTWController::GetInstance().Read(PCA9554_RST_ADDR, 1, true);
    uint8_t unPortState = CTWController::GetInstance().Read();
+   CTWController::GetInstance().unlock();   
    /* Enable the target port */
    unPortState |= (1 << static_cast<uint8_t>(e_target_port));
    /* Write configuration back */
+   CTWController::GetInstance().lock();
    CTWController::GetInstance().BeginTransmission(PCA9554_RST_ADDR);
    CTWController::GetInstance().Write(static_cast<uint8_t>(EPCA9554Register::OUTPUT));
    CTWController::GetInstance().Write(unPortState);
    CTWController::GetInstance().EndTransmission(true);
+   CTWController::GetInstance().unlock();   
 }
 
 /***********************************************************/
 /***********************************************************/
 
 void CPortController::DisablePort(EPort e_target_port) {
+   CTWController::GetInstance().lock();
    CTWController::GetInstance().BeginTransmission(PCA9554_RST_ADDR);
    CTWController::GetInstance().Write(static_cast<uint8_t>(EPCA9554Register::OUTPUT));
    CTWController::GetInstance().EndTransmission(false);
    CTWController::GetInstance().Read(PCA9554_RST_ADDR, 1, true);
    uint8_t unPortState = CTWController::GetInstance().Read();
+   CTWController::GetInstance().unlock();   
    /* Disable the target port */
    unPortState &= ~(1 << static_cast<uint8_t>(e_target_port));
    /* Write configuration back */
+   CTWController::GetInstance().lock();
    CTWController::GetInstance().BeginTransmission(PCA9554_RST_ADDR);
    CTWController::GetInstance().Write(static_cast<uint8_t>(EPCA9554Register::OUTPUT));
    CTWController::GetInstance().Write(unPortState);
    CTWController::GetInstance().EndTransmission(true);
+   CTWController::GetInstance().unlock();   
 }
 
 /***********************************************************/
