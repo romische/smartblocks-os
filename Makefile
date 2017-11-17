@@ -21,7 +21,7 @@ NM_NAME      = avr-nm
 # Paths
 MAKEFILE_PATH := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
-AVR_TOOLCHAIN_DIR = $(MAKEFILE_PATH)/toolchain/install/
+AVR_TOOLCHAIN_DIR = $(MAKEFILE_PATH)/toolchain/install
 AVR_TOOLS_PATH = $(AVR_TOOLCHAIN_DIR)/bin
 #OBJDIR = $(MAKEFILE_PATH)/build
 #SRCDIR = $(MAKEFILE_PATH)/source

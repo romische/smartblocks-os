@@ -14,13 +14,15 @@
 
 bool InitMPU6050();
 void TestAccelerometer(int arg);
-const char* GetPortString(CPortController::EPort ePort);
-void TestPortController();
-void SetAllColorsOnFace(uint8_t unRed, uint8_t unGreen, uint8_t unBlue);
-void SetAllModesOnFace(CLEDController::EMode e_mode);
-void TestLEDs();
-void dummy5();
 
+void TestPortController();
+
+void InitLEDs();
+void TestLEDs();
+void VariateLEDsOnPort(CPortController::EPort eConnectedPort);
+
+void dummy5();
+void LEDtask();
 
 /******************************************** Accelerometer ******************************************/
 
@@ -362,8 +364,6 @@ int main(void){
    stdout = CHUARTController::instance().get_file();
    
    //InitMPU6050();
-   
-   
    
    System::instance().schedule_task((void*) LEDtask, nullptr);   
    /*
