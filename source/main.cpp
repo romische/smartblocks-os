@@ -340,6 +340,10 @@ void LEDtask(){
 	
 	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::NORTH);
 	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::EAST);
+	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::SOUTH);
+	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::WEST);
+	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::TOP);
+	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::BOTTOM);
 	
 	/*for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
     	if(eConnectedPort != CPortController::EPort::NULLPORT) {
