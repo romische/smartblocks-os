@@ -129,7 +129,8 @@ CPortController::EPort m_peConnectedPorts[NUM_PORTS] {
    };
 
 void TestPortController() {
-
+	
+   // Init the CPortController
    CPortController::instance().lock();
    CPortController::instance().SelectPort(CPortController::EPort::NULLPORT);
    System::instance().sleep(10);
@@ -137,6 +138,7 @@ void TestPortController() {
    CPortController::instance().unlock();
 
 
+   // Construct the list m_peConnectedPorts
    for(CPortController::EPort& ePort : m_peAllPorts) {
    	  CPortController::instance().lock();
       if(CPortController::instance().IsPortConnected(ePort)) {
@@ -152,11 +154,12 @@ void TestPortController() {
       else
       	CPortController::instance().unlock();
    }
+   
    CPortController::instance().lock();
    CPortController::instance().SelectPort(CPortController::EPort::NULLPORT);
    CPortController::instance().unlock();
    
-   //print result
+   //print the list m_peConnectedPorts
    CHUARTController::instance().lock();
    printf("Connected Ports: ");
    for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
@@ -166,20 +169,21 @@ void TestPortController() {
    }
    printf("\r\n");
    CHUARTController::instance().unlock();
-   
-   System::instance().schedule_task((void*) TestLEDs, nullptr);
-   System::instance().exit_task();
 }
 
 
 /******************************************** Leds ******************************************/
 
 
-void TestLEDs() {
-  
-  //Init leds
+void InitLEDs(){
+
   for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
       if(eConnectedPort != CPortController::EPort::NULLPORT) {
+      	 
+      	 CHUARTController::instance().lock();
+      	 printf("Initiating LEDs on port %s \r\n", CPortController::instance().GetPortString(eConnectedPort));
+      	 CHUARTController::instance().unlock();
+      	 
          CPortController::instance().lock();
          CPortController::instance().SelectPort(eConnectedPort);
      	 
@@ -191,9 +195,11 @@ void TestLEDs() {
          CPortController::instance().unlock();
       }
    }
-   
-   System::instance().sleep(1000);
-	
+   System::instance().sleep(10);
+}
+
+
+void TestLEDs() {
 
 	//foreach color
 	//red 0, green 1, blue 2, all 3
@@ -259,6 +265,60 @@ void TestLEDs() {
 }
 
 
+void VariateLEDsOnPort(CPortController::EPort eConnectedPort){
+
+	//foreach color
+	//red 0, green 1, blue 2, white 3
+   for(uint8_t unColor = 0; unColor < 4; unColor++) {
+   	
+	   CHUARTController::instance().lock();
+	   printf("color %d\r\n", unColor);
+	   CHUARTController::instance().unlock();
+	   
+   	  //set color and increase brightness
+      for(uint8_t unVal = 0x00; unVal < 0x40; unVal++) {
+         CPortController::instance().lock();
+         CPortController::instance().SelectPort(eConnectedPort);
+         if(unColor==0)
+         	CLEDController::SetAllColorsOnFace(unVal,0x00,0x00);
+         else if (unColor==1)
+         	CLEDController::SetAllColorsOnFace(0x00,unVal,0x00);
+         else if (unColor==2)
+         	CLEDController::SetAllColorsOnFace(0x00,0x00,unVal);
+         else 
+         	CLEDController::SetAllColorsOnFace(unVal,unVal,unVal);
+         CPortController::instance().unlock();
+         System::instance().sleep(1);
+      }
+      
+   	  //then decrease brightness
+      for(uint8_t unVal = 0x40; unVal > 0x00; unVal--) {
+         CPortController::instance().lock();
+         CPortController::instance().SelectPort(eConnectedPort);
+         if(unColor==0)
+         	CLEDController::SetAllColorsOnFace(unVal,0x00,0x00);
+         else if (unColor==1)
+         	CLEDController::SetAllColorsOnFace(0x00,unVal,0x00);
+         else if (unColor==2)
+         	CLEDController::SetAllColorsOnFace(0x00,0x00,unVal);
+         else 
+         	CLEDController::SetAllColorsOnFace(unVal,unVal,unVal);
+         CPortController::instance().unlock();
+         System::instance().sleep(1);
+      }
+   }
+   
+   //finally set all colors on a low value
+   CPortController::instance().lock();
+   CPortController::instance().SelectPort(eConnectedPort);
+   CLEDController::SetAllColorsOnFace(0x01,0x01,0x01);
+   CPortController::instance().unlock();
+   
+   System::instance().exit_task();
+}
+
+
+
 /******************************************** Others ******************************************/
 
 void dummy5(){
@@ -272,8 +332,30 @@ void dummy5(){
 	}
 }
 
+void LEDtask(){
+	TestPortController();
+	InitLEDs();
+	
+	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::NORTH);
+	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::EAST);
+	
+	/*for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
+    	if(eConnectedPort != CPortController::EPort::NULLPORT) {
+    		CPortController::EPort port = eConnectedPort;
+			CHUARTController::instance().lock();
+			printf("Lauching task on %s\r\n", CPortController::instance().GetPortString(port));
+			CHUARTController::instance().unlock();
+			System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) port);
+		}
+	}*/
+	
+	System::instance().exit_task();
+}
+
 
 /******************************************** Main ******************************************/
+
+
 
 int main(void){
 	
@@ -283,7 +365,7 @@ int main(void){
    
    
    
-   System::instance().schedule_task((void*) TestPortController, nullptr);   
+   System::instance().schedule_task((void*) LEDtask, nullptr);   
    /*
    System::instance().schedule_task((void*) TestAccelerometer, (void*) 2);   
    System::instance().schedule_task((void*) TestAccelerometer, (void*) 7);
