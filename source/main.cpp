@@ -130,13 +130,18 @@ CPortController::EPort m_peConnectedPorts[NUM_PORTS] {
 
 void TestPortController() {
 
+   CPortController::instance().lock();
    CPortController::instance().SelectPort(CPortController::EPort::NULLPORT);
    System::instance().sleep(10);
    CPortController::instance().Init();
+   CPortController::instance().unlock();
 
 
    for(CPortController::EPort& ePort : m_peAllPorts) {
+   	  CPortController::instance().lock();
       if(CPortController::instance().IsPortConnected(ePort)) {
+      	 CPortController::instance().unlock();
+      	 //if port is connected then look at all port in connectedPorts and replace the first NULLport encountered 
          for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
             if(eConnectedPort == CPortController::EPort::NULLPORT) {
                eConnectedPort = ePort;
@@ -144,8 +149,12 @@ void TestPortController() {
             }
          }         
       }
+      else
+      	CPortController::instance().unlock();
    }
+   CPortController::instance().lock();
    CPortController::instance().SelectPort(CPortController::EPort::NULLPORT);
+   CPortController::instance().unlock();
    
    //print result
    CHUARTController::instance().lock();
@@ -171,6 +180,7 @@ void TestLEDs() {
   //Init leds
   for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
       if(eConnectedPort != CPortController::EPort::NULLPORT) {
+         CPortController::instance().lock();
          CPortController::instance().SelectPort(eConnectedPort);
      	 
          CLEDController::Init();
@@ -178,6 +188,7 @@ void TestLEDs() {
          CLEDController::SetAllColorsOnFace(0x01,0x01,0x02);
          
          CPortController::instance().EnablePort(eConnectedPort);  //whut why?
+         CPortController::instance().unlock();
       }
    }
    
@@ -196,6 +207,7 @@ void TestLEDs() {
       for(uint8_t unVal = 0x00; unVal < 0x40; unVal++) {
          for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
             if(eConnectedPort != CPortController::EPort::NULLPORT) {
+               CPortController::instance().lock();
                CPortController::instance().SelectPort(eConnectedPort);
          	   if(unColor==0)
          	   	CLEDController::SetAllColorsOnFace(unVal,0x00,0x00);
@@ -205,7 +217,7 @@ void TestLEDs() {
          	   	CLEDController::SetAllColorsOnFace(0x00,0x00,unVal);
          	   else 
          	   	CLEDController::SetAllColorsOnFace(unVal,unVal,unVal);
-         	   
+         	   CPortController::instance().unlock();
             }
          }
          System::instance().sleep(1);
@@ -214,6 +226,7 @@ void TestLEDs() {
       for(uint8_t unVal = 0x40; unVal > 0x00; unVal--) {
          for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
             if(eConnectedPort != CPortController::EPort::NULLPORT) {
+               CPortController::instance().lock();
                CPortController::instance().SelectPort(eConnectedPort);
          	   if(unColor==0)
          	   	CLEDController::SetAllColorsOnFace(unVal,0x00,0x00);
@@ -223,6 +236,7 @@ void TestLEDs() {
          	   	CLEDController::SetAllColorsOnFace(0x00,0x00,unVal);
          	   else 
          	   	CLEDController::SetAllColorsOnFace(unVal,unVal,unVal);
+         	   CPortController::instance().unlock();
             }  
          }
          System::instance().sleep(1);
@@ -232,8 +246,11 @@ void TestLEDs() {
    //finally set all colors on a low value
    for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
             if(eConnectedPort != CPortController::EPort::NULLPORT) {
+               CPortController::instance().lock();
                CPortController::instance().SelectPort(eConnectedPort);
                CLEDController::SetAllColorsOnFace(0x01,0x01,0x01);
+               CPortController::instance().unlock();
+               
             }  
    }
    

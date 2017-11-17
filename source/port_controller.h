@@ -5,7 +5,7 @@
 #include "interrupt.h"
 #include "tw_controller.h"
 #include "system.h" //for sleep(int) in IsPortConnected(..)
-					//!!\ this implies that it can only be used in the multitasking context
+					//!!\ this implies that CPortController can only be used in the multitasking context
 
 #define EXT_INT0_SENSE_MASK        0x03
 #define EXT_INT0_FALLING_EDGE      0x02
@@ -17,7 +17,7 @@
 #define NUM_PORTS 6
 
 
-class CPortController {
+class CPortController : public Resource  {
 public:
    enum class EPort : uint8_t {
       NORTH  = 0,
