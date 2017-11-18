@@ -56,8 +56,10 @@ int System::run(){
  */
 int System::schedule_task(void* address, void* args){
 	int task_num;
+	
+	//if every slot is occupied (= we reached max tasks)
 	if(task_count == MAX_TASKS){
-		//look for a task that is finished
+		//look for a task that is finished and save its ID in finished_task
 		int finished_task = -1;
 		for(int i = 0; i<task_count; i++){
 		   	if(!tasks[i].running){
@@ -65,32 +67,35 @@ int System::schedule_task(void* address, void* args){
 		   		break;
 		   	}
 		}
-		if (finished_task == -1) //no not running task has been found
+		// if no not running task has been found, return -1
+		if (finished_task == -1)
 			return -1;
 		else
 			task_num = finished_task;
 	}
+	// if there is still free slots then just take the next one
 	else{
 		task_num=task_count;
+
 		task_count++;	
 	}
-	
-	// Reserving space on the stack for the task
+		
+	// Reserving space on the stack for the task (top and the 256 bytes below)  
+	// & fill it with 0's
 	stackPointer top = tasksStackTop - (task_num*TASK_STACK_SIZE);
-	memset(top - TASK_STACK_SIZE, 0, TASK_STACK_SIZE);
+	memset(top - TASK_STACK_SIZE, 0, TASK_STACK_SIZE); 
 
 	//put in stack : address and arguments
 	*(top) = ((uint16_t)address);
 	*(top - 1) = (((uint16_t)address) >> 8);
 	 
-
     stackPointer registerStartAddr = top - 3;
     *(registerStartAddr - 24) = ((uint16_t) args);
     *(registerStartAddr - 25) = (((uint16_t) args) >> 8);
 	 
 	//save the initial stackpointer for this task  
 	cli();
-	tasks[task_num].sp = top-35; // because SAVE_CONTEXT will pop 33 values. 
+	tasks[task_num].sp = top-35; // because RESTORE_CONTEXT will pop 33 values. 
 								   // the 2 remaining values are the return address (aka PC)
 	tasks[task_num].sleep_time=-1;
 	tasks[task_num].running=true;
