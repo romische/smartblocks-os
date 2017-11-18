@@ -2,6 +2,7 @@
 /* AVR Headers */
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <stdlib.h>  //for malloc
 
 /* Firmware Headers */
 #include "system.h"
@@ -11,6 +12,7 @@
 #include "port_controller.h"
 #include "led_controller.h"
 
+stackPointer stackTopCheck;
 
 bool InitMPU6050();
 void TestAccelerometer(int arg);
@@ -23,6 +25,25 @@ void VariateLEDsOnPort(CPortController::EPort eConnectedPort);
 
 void dummy5();
 void LEDtask();
+
+
+/****************************************** RAM Debug ******************************************/
+
+void printRAMUsage(char* func_name, bool needs_to_lock){
+	//set the stackTopCheck pointer
+   asm volatile("in r0, __SP_L__\nsts stackTopCheck, r0\nin r0, __SP_H__\nsts stackTopCheck+1, r0");
+   
+   //creates a pointer that may point to the top of the stack (better use a bigger one...)
+   int* p = (int*) malloc(sizeof(int));
+   
+   //print
+   if(needs_to_lock) CHUARTController::instance().lock();
+   printf("%s : \t [HEAP] 256 -> %u \t %u <- 2303 [Stack] \t tot %u %u \r\n", func_name, p, stackTopCheck, ((uint16_t)p-256), (2303-(uint16_t) stackTopCheck));
+   if(needs_to_lock) CHUARTController::instance().unlock();
+   
+   //free memory
+   free(p);
+}
 
 /******************************************** Accelerometer ******************************************/
 
@@ -179,12 +200,16 @@ void TestPortController() {
 
 void InitLEDs(){
 
+
+   
+   printRAMUsage("InitLEDs", true);
+
   for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
       if(eConnectedPort != CPortController::EPort::NULLPORT) {
       	 
-      	 CHUARTController::instance().lock();
-      	 printf("Initiating LEDs on port %s \r\n", CPortController::instance().GetPortString(eConnectedPort));
-      	 CHUARTController::instance().unlock();
+      	 //CHUARTController::instance().lock();
+      	 //printf("Initiating LEDs on port %s \r\n", CPortController::instance().GetPortString(eConnectedPort));
+      	 //CHUARTController::instance().unlock();
       	 
          CPortController::instance().lock();
          CPortController::instance().SelectPort(eConnectedPort);
@@ -197,86 +222,24 @@ void InitLEDs(){
          CPortController::instance().unlock();
       }
    }
+   
+   
+   
+   printRAMUsage("InitLEDs", true);
+   
    System::instance().sleep(10);
-}
-
-
-void TestLEDs() {
-
-	//foreach color
-	//red 0, green 1, blue 2, all 3
-   for(uint8_t unColor = 0; unColor < 4; unColor++) {
-   	
-	   CHUARTController::instance().lock();
-	   printf("color %d\r\n", unColor);
-	   CHUARTController::instance().unlock();
-	   
-   	  //set color and increase brightness
-      for(uint8_t unVal = 0x00; unVal < 0x40; unVal++) {
-         for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
-            if(eConnectedPort != CPortController::EPort::NULLPORT) {
-               CPortController::instance().lock();
-               CPortController::instance().SelectPort(eConnectedPort);
-         	   if(unColor==0)
-         	   	CLEDController::SetAllColorsOnFace(unVal,0x00,0x00);
-         	   else if (unColor==1)
-         	   	CLEDController::SetAllColorsOnFace(0x00,unVal,0x00);
-         	   else if (unColor==2)
-         	   	CLEDController::SetAllColorsOnFace(0x00,0x00,unVal);
-         	   else 
-         	   	CLEDController::SetAllColorsOnFace(unVal,unVal,unVal);
-         	   CPortController::instance().unlock();
-            }
-         }
-         System::instance().sleep(1);
-      }
-   	  //then decrease brightness
-      for(uint8_t unVal = 0x40; unVal > 0x00; unVal--) {
-         for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
-            if(eConnectedPort != CPortController::EPort::NULLPORT) {
-               CPortController::instance().lock();
-               CPortController::instance().SelectPort(eConnectedPort);
-         	   if(unColor==0)
-         	   	CLEDController::SetAllColorsOnFace(unVal,0x00,0x00);
-         	   else if (unColor==1)
-         	   	CLEDController::SetAllColorsOnFace(0x00,unVal,0x00);
-         	   else if (unColor==2)
-         	   	CLEDController::SetAllColorsOnFace(0x00,0x00,unVal);
-         	   else 
-         	   	CLEDController::SetAllColorsOnFace(unVal,unVal,unVal);
-         	   CPortController::instance().unlock();
-            }  
-         }
-         System::instance().sleep(1);
-      }
-   }
-   
-   //finally set all colors on a low value
-   for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
-            if(eConnectedPort != CPortController::EPort::NULLPORT) {
-               CPortController::instance().lock();
-               CPortController::instance().SelectPort(eConnectedPort);
-               CLEDController::SetAllColorsOnFace(0x01,0x01,0x01);
-               CPortController::instance().unlock();
-               
-            }  
-   }
-   
-   
-   System::instance().exit_task();
 }
 
 
 void VariateLEDsOnPort(CPortController::EPort eConnectedPort){
 
+	
+   printRAMUsage("Var LEDs", true);
+   	  
 	//foreach color
 	//red 0, green 1, blue 2, white 3
    for(uint8_t unColor = 0; unColor < 4; unColor++) {
-   	
-	   CHUARTController::instance().lock();
-	   printf("color %d\r\n", unColor);
-	   CHUARTController::instance().unlock();
-	   
+   	  
    	  //set color and increase brightness
       for(uint8_t unVal = 0x00; unVal < 0x40; unVal++) {
          CPortController::instance().lock();
@@ -361,21 +324,35 @@ void LEDtask(){
 
 /******************************************** Main ******************************************/
 
-
+extern stackPointer stackTop;
+extern stackPointer tasksStackTop;
+extern task_definition tasks[MAX_TASKS];
 
 int main(void){
+	
+   printRAMUsage("main", false);
 	
    stdout = CHUARTController::instance().get_file();
    
    //InitMPU6050();
    
+   
+   printRAMUsage("Scheduling", false);
    System::instance().schedule_task((void*) LEDtask, nullptr);   
    /*
    System::instance().schedule_task((void*) TestAccelerometer, (void*) 2);   
    System::instance().schedule_task((void*) TestAccelerometer, (void*) 7);
    */
    
-   printf("\r\n\r\nStarting the program...\r\n");
+   //
+   printRAMUsage("Starting", false);
+   printf("StackTop : %u\r\n", stackTop);
+   printf("tasksStackTop : %u\r\n", tasksStackTop);
+   printf("task %d SP : %u\r\n", 0, tasks[0].sp);
+   printf("task %d SP : %u\r\n", 1, tasks[2].sp);
+   printf("task %d SP : %u\r\n", 2, tasks[2].sp);
+   printf("\r\n\r\nStarting the program...\r\n");   
+   
    return System::instance().run();  
 }
 
