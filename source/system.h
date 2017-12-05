@@ -2,6 +2,10 @@
 #define SYSTEM_H
 
 #include <stdint.h>
+#include "context.h"
+
+#include <avr/interrupt.h>
+#include <string.h>   //memset
 
 /*
  *   A remark on MAX_TASKS
