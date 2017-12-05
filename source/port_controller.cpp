@@ -1,7 +1,5 @@
 #include "port_controller.h"
 
-#include <avr/io.h>
-
 #define NUM_FACES 6
 #define PORTC_TWCLK_MASK 0x20
 #define PORT_CTRL_MASK 0x0F

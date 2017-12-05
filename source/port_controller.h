@@ -2,6 +2,8 @@
 #define PORT_CONTROLLER_H
 
 #include <stdint.h>
+#include <avr/io.h>
+#include "resource.h"
 #include "interrupt.h"
 #include "tw_controller.h"
 #include "system.h" //for sleep(int) in IsPortConnected(..)
