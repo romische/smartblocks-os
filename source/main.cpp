@@ -11,6 +11,7 @@
 #include "tw_controller.h"
 #include "port_controller.h"
 #include "led_controller.h"
+#include "nfc_controller.h"
 
 stackPointer stackTopCheck;
 
