@@ -29,6 +29,14 @@ void LEDtask();
 
 /****************************************** RAM Debug ******************************************/
 
+/*
+ * prints RAM usage
+ * [HEAP] 256 -> x 	 y <- 2303 [Stack] 	 tot xx yy 
+ * where x is the address of a newly created pointer (not the actual heap top!!)
+ * and y is the top of the stack
+ * xx and yy are the corresponding total sizes
+ * needs_to_lock must be set to true if we are in the multitask environment
+ */
 void printRAMUsage(char* func_name, bool needs_to_lock){
 	//set the stackTopCheck pointer
    asm volatile("in r0, __SP_L__\nsts stackTopCheck, r0\nin r0, __SP_H__\nsts stackTopCheck+1, r0");
@@ -199,10 +207,8 @@ void TestPortController() {
 
 
 void InitLEDs(){
-
-
-   
-   printRAMUsage("InitLEDs", true);
+ 
+  printRAMUsage("InitLEDs (1)", true);
 
   for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
       if(eConnectedPort != CPortController::EPort::NULLPORT) {
@@ -225,7 +231,7 @@ void InitLEDs(){
    
    
    
-   printRAMUsage("InitLEDs", true);
+   printRAMUsage("InitLEDs (2)", true);
    
    System::instance().sleep(10);
 }
@@ -233,8 +239,12 @@ void InitLEDs(){
 
 void VariateLEDsOnPort(CPortController::EPort eConnectedPort){
 
-	
    printRAMUsage("Var LEDs", true);
+   
+   //TODO WHYYY this does not print? 
+   CHUARTController::instance().lock();
+   printf("variating leds...\r\n");
+   CHUARTController::instance().unlock();
    	  
 	//foreach color
 	//red 0, green 1, blue 2, white 3
@@ -301,22 +311,12 @@ void LEDtask(){
 	TestPortController();
 	InitLEDs();
 	
-	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::NORTH);
-	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::EAST);
+	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::NORTH);
+	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::EAST);
 	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::SOUTH);
 	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::WEST);
-	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::TOP);
-	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::BOTTOM);
-	
-	/*for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
-    	if(eConnectedPort != CPortController::EPort::NULLPORT) {
-    		CPortController::EPort port = eConnectedPort;
-			CHUARTController::instance().lock();
-			printf("Lauching task on %s\r\n", CPortController::instance().GetPortString(port));
-			CHUARTController::instance().unlock();
-			System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) port);
-		}
-	}*/
+	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::TOP);
+	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::BOTTOM);
 	
 	System::instance().exit_task();
 }
@@ -330,29 +330,28 @@ extern task_definition tasks[MAX_TASKS];
 
 int main(void){
 	
-   printRAMUsage("main", false);
-	
    stdout = CHUARTController::instance().get_file();
    
-   //InitMPU6050();
-   
-   
-   printRAMUsage("Scheduling", false);
-   System::instance().schedule_task((void*) LEDtask, nullptr);   
+   printRAMUsage("main", false);
+   //Led test
+   System::instance().schedule_task((void*) LEDtask, nullptr); 
+     
    /*
+   //Accelerometer test
+   InitMPU6050();
    System::instance().schedule_task((void*) TestAccelerometer, (void*) 2);   
    System::instance().schedule_task((void*) TestAccelerometer, (void*) 7);
    */
    
    //
-   printRAMUsage("Starting", false);
-   printf("StackTop : %u\r\n", stackTop);
-   printf("tasksStackTop : %u\r\n", tasksStackTop);
-   printf("task %d SP : %u\r\n", 0, tasks[0].sp);
-   printf("task %d SP : %u\r\n", 1, tasks[2].sp);
-   printf("task %d SP : %u\r\n", 2, tasks[2].sp);
-   printf("\r\n\r\nStarting the program...\r\n");   
+   printRAMUsage("main", false);
+   printf("\tStackTop : %u\r\n", stackTop);
+   printf("\ttasksStackTop : %u\r\n", tasksStackTop);
+   printf("\ttask SP's : [%u, %u, %u]\r\n", tasks[0].sp, tasks[1].sp, tasks[2].sp);
+   //SP of task 1 and 2 will be 0 as they did not start yet.
+   printf("End of RAM informations.\r\n");
    
+   printf("\r\nStarting the program...\r\n");   
    return System::instance().run();  
 }
 
