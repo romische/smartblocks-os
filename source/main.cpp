@@ -13,6 +13,16 @@
 #include "led_controller.h"
 #include "nfc_controller.h"
 
+/*
+#define DEBUG(msg){ \
+  CHUARTController::instance().lock(); \
+  printf("[%d]\t", CTimer::instance().GetMilliseconds());
+  printf("%s\r\n", msg);
+  CHUARTController::instance().unlock();
+  }
+*/
+
+
 stackPointer stackTopCheck;
 
 bool InitMPU6050();
@@ -76,19 +86,21 @@ enum class EMPU6050Register : uint8_t {
 
 
 bool InitMPU6050() {
+   CTWController tw  = CTWController::GetInstance();
+   
    /* Probe */
-   CTWController::GetInstance().BeginTransmission(MPU6050_ADDR);
-   CTWController::GetInstance().Write(static_cast<uint8_t>(EMPU6050Register::WHOAMI));
-   CTWController::GetInstance().EndTransmission(false);
-   CTWController::GetInstance().Read(MPU6050_ADDR, 1, true);
-         
-   if(CTWController::GetInstance().Read() != MPU6050_ADDR) 
+   tw.BeginTransmission(MPU6050_ADDR);
+   tw.Write(static_cast<uint8_t>(EMPU6050Register::WHOAMI));
+   tw.EndTransmission(false);
+   tw.Read(MPU6050_ADDR, 1, true);      
+   if(tw.Read() != MPU6050_ADDR) 
       return false;
+      
    /* select internal clock, disable sleep/cycle mode, enable temperature sensor*/
-   CTWController::GetInstance().BeginTransmission(MPU6050_ADDR);
-   CTWController::GetInstance().Write(static_cast<uint8_t>(EMPU6050Register::PWR_MGMT_1));
-   CTWController::GetInstance().Write(0x00);
-   CTWController::GetInstance().EndTransmission(true);
+   tw.BeginTransmission(MPU6050_ADDR);
+   tw.Write(static_cast<uint8_t>(EMPU6050Register::PWR_MGMT_1));
+   tw.Write(0x00);
+   tw.EndTransmission(true);
 
    return true;
 }
@@ -97,45 +109,34 @@ void TestAccelerometer(int arg) {
 	while(true){
 	   /* Array for holding accelerometer result */
 	   uint8_t punMPU6050Res[8];
-		CHUARTController::instance().lock();
-		printf("task %d try to lock the TW\r\n",arg);
-		CHUARTController::instance().unlock();
-	   CTWController::GetInstance().lock();
-		CHUARTController::instance().lock();
-		printf("task %d locked the TW\r\n",arg);
-		CHUARTController::instance().unlock();
-	   CTWController::GetInstance().BeginTransmission(MPU6050_ADDR);
-	   CTWController::GetInstance().Write(static_cast<uint8_t>(EMPU6050Register::ACCEL_XOUT_H));
-	   CTWController::GetInstance().EndTransmission(false);
-	   CTWController::GetInstance().Read(MPU6050_ADDR, 8, true);
+	   CTWController tw  = CTWController::GetInstance();
+	   tw.lock();
+	   tw.BeginTransmission(MPU6050_ADDR);
+	   tw.Write(static_cast<uint8_t>(EMPU6050Register::ACCEL_XOUT_H));
+	   tw.EndTransmission(false);
+	   tw.Read(MPU6050_ADDR, 8, true);
 	   
 	   /* Read the requested 8 bytes */
 	   for(uint8_t i = 0; i < 8; i++) {
-		  punMPU6050Res[i] = CTWController::GetInstance().Read();
+		  punMPU6050Res[i] = tw.Read();
 	   }
+	   tw.unlock();
 	   
-		
-		CHUARTController::instance().lock();
-		printf("task %d UNlock the TW\r\n",arg);
-		CHUARTController::instance().unlock();
-	   CTWController::GetInstance().unlock();
-	   
-	   CHUARTController::instance().lock();
-	   printf( "---------------%d\t"
-	   		   "Acc[x] = %i\t"
+	   CHUARTController huart = CHUARTController::instance();
+	   huart.lock();
+	   printf( "Acc[x] = %i\t"
 		       "Acc[y] = %i\t"
 		       "Acc[z] = %i\t"
 		       "Temp = %i\t"
 		       "Time = %d\r\n",
-		       arg,
 		       int16_t((punMPU6050Res[0] << 8) | punMPU6050Res[1]),
 		       int16_t((punMPU6050Res[2] << 8) | punMPU6050Res[3]),
 		       int16_t((punMPU6050Res[4] << 8) | punMPU6050Res[5]),
 		       (int16_t((punMPU6050Res[6] << 8) | punMPU6050Res[7]) + 12412) / 340,
 		       CTimer::instance().GetMilliseconds());  
-	   CHUARTController::instance().Flush();
-	   CHUARTController::instance().unlock();
-		//System::instance().sleep(1000);
+	   huart.Flush();
+	   huart.unlock();
+	   System::instance().sleep(1000);
 	}
 }
 
@@ -160,21 +161,27 @@ CPortController::EPort m_peConnectedPorts[NUM_PORTS] {
       CPortController::EPort::NULLPORT,
    };
 
-void TestPortController() {
+
+/* Construct the list m_peConnectedPorts and print the connected ports */
+void InitPortController() {
+
+   CHUARTController::instance().lock();
+   printf("[%d]\tCreating list of connected ports\r\n", CTimer::instance().GetMilliseconds());
+   CHUARTController::instance().unlock();
 	
-   // Init the CPortController
-   CPortController::instance().lock();
-   CPortController::instance().SelectPort(CPortController::EPort::NULLPORT);
+   CPortController p = CPortController::instance();
+	
+   /* Init the CPortController */
+   p.lock();
+   p.SelectPort(CPortController::EPort::NULLPORT);
    System::instance().sleep(10);
-   CPortController::instance().Init();
-   CPortController::instance().unlock();
+   p.Init();
 
+   // disable tw before??
 
-   // Construct the list m_peConnectedPorts
+   /* Fill the list m_peConnectedPorts */
    for(CPortController::EPort& ePort : m_peAllPorts) {
-   	  CPortController::instance().lock();
-      if(CPortController::instance().IsPortConnected(ePort)) {
-      	 CPortController::instance().unlock();
+      if(p.IsPortConnected(ePort)) {
       	 //if port is connected then look at all port in connectedPorts and replace the first NULLport encountered 
          for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
             if(eConnectedPort == CPortController::EPort::NULLPORT) {
@@ -183,24 +190,21 @@ void TestPortController() {
             }
          }         
       }
-      else
-      	CPortController::instance().unlock();
    }
+   p.SelectPort(CPortController::EPort::NULLPORT);
+   p.unlock();
    
-   CPortController::instance().lock();
-   CPortController::instance().SelectPort(CPortController::EPort::NULLPORT);
-   CPortController::instance().unlock();
-   
-   //print the list m_peConnectedPorts
+   /* Print the list m_peConnectedPorts */
    CHUARTController::instance().lock();
    printf("Connected Ports: ");
    for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
       if(eConnectedPort != CPortController::EPort::NULLPORT) {
-         printf("%s ", CPortController::instance().GetPortString(eConnectedPort));
+         printf("%s ", p.GetPortString(eConnectedPort));
       }
    }
    printf("\r\n");
    CHUARTController::instance().unlock();
+   System::instance().exit_task();
 }
 
 
@@ -208,92 +212,105 @@ void TestPortController() {
 
 
 void InitLEDs(){
+
+  CHUARTController::instance().lock();
+  printf("[%d]\tInitiating LEDs\r\n", CTimer::instance().GetMilliseconds());
+  CHUARTController::instance().unlock();
  
-  printRAMUsage("InitLEDs (1)", true);
+  CPortController p = CPortController::instance(); 
 
   for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
       if(eConnectedPort != CPortController::EPort::NULLPORT) {
       	 
-      	 //CHUARTController::instance().lock();
-      	 //printf("Initiating LEDs on port %s \r\n", CPortController::instance().GetPortString(eConnectedPort));
-      	 //CHUARTController::instance().unlock();
-      	 
-         CPortController::instance().lock();
-         CPortController::instance().SelectPort(eConnectedPort);
+         p.lock();
+         p.SelectPort(eConnectedPort);
      	 
          CLEDController::Init();
          CLEDController::SetAllModesOnFace(CLEDController::EMode::PWM);
          CLEDController::SetAllColorsOnFace(0x01,0x01,0x02);
          
-         CPortController::instance().EnablePort(eConnectedPort);  //whut why?
-         CPortController::instance().unlock();
+         p.unlock();
       }
    }
    
-   
-   
-   printRAMUsage("InitLEDs (2)", true);
-   
    System::instance().sleep(10);
+   System::instance().exit_task();
 }
 
 
-void VariateLEDsOnPort(CPortController::EPort eConnectedPort){
+void setFaceColor(uint8_t unColor, uint8_t unVal, CPortController::EPort eConnectedPort){
 
-   printRAMUsage("Var LEDs", true);
+   CPortController p = CPortController::instance();
    
-   //TODO WHYYY this does not print? 
+   p.lock();
+   p.SelectPort(eConnectedPort);
+   switch(unColor) {
+   		case 0 :
+   			CLEDController::SetAllColorsOnFace(unVal,0x00,0x00);
+   			break;
+   		case 1 :
+   			CLEDController::SetAllColorsOnFace(0x00,unVal,0x00);
+   			break;
+   		case 2 :
+   			CLEDController::SetAllColorsOnFace(0x00,0x00,unVal);
+   			break;
+   		case 3 :
+   			CLEDController::SetAllColorsOnFace(unVal,unVal,unVal);
+   			break;
+   		default :
+   			break;
+   }
+   p.unlock();
+   System::instance().sleep(1);
+}
+
+void VariateLEDsOnPort(CPortController::EPort eConnectedPort){
+   
+   CPortController p = CPortController::instance();
+
    CHUARTController::instance().lock();
-   printf("variating leds...\r\n");
+   printf("[%d]\tVariating LEDs on port", CTimer::instance().GetMilliseconds());
+   printf(" %s \r\n", p.GetPortString(eConnectedPort));  //WHY ONLY ONE ARGUMENT??!
    CHUARTController::instance().unlock();
    	  
-	//foreach color
-	//red 0, green 1, blue 2, white 3
+   //foreach color  (red 0, green 1, blue 2, white 3 )
    for(uint8_t unColor = 0; unColor < 4; unColor++) {
    	  
    	  //set color and increase brightness
       for(uint8_t unVal = 0x00; unVal < 0x40; unVal++) {
-         CPortController::instance().lock();
-         CPortController::instance().SelectPort(eConnectedPort);
-         if(unColor==0)
-         	CLEDController::SetAllColorsOnFace(unVal,0x00,0x00);
-         else if (unColor==1)
-         	CLEDController::SetAllColorsOnFace(0x00,unVal,0x00);
-         else if (unColor==2)
-         	CLEDController::SetAllColorsOnFace(0x00,0x00,unVal);
-         else 
-         	CLEDController::SetAllColorsOnFace(unVal,unVal,unVal);
-         CPortController::instance().unlock();
-         System::instance().sleep(1);
+      	setFaceColor(unColor, unVal, eConnectedPort);
       }
       
    	  //then decrease brightness
       for(uint8_t unVal = 0x40; unVal > 0x00; unVal--) {
-         CPortController::instance().lock();
-         CPortController::instance().SelectPort(eConnectedPort);
-         if(unColor==0)
-         	CLEDController::SetAllColorsOnFace(unVal,0x00,0x00);
-         else if (unColor==1)
-         	CLEDController::SetAllColorsOnFace(0x00,unVal,0x00);
-         else if (unColor==2)
-         	CLEDController::SetAllColorsOnFace(0x00,0x00,unVal);
-         else 
-         	CLEDController::SetAllColorsOnFace(unVal,unVal,unVal);
-         CPortController::instance().unlock();
-         System::instance().sleep(1);
+      	setFaceColor(unColor, unVal, eConnectedPort);
       }
    }
    
    //finally set all colors on a low value
-   CPortController::instance().lock();
-   CPortController::instance().SelectPort(eConnectedPort);
-   CLEDController::SetAllColorsOnFace(0x01,0x01,0x01);
-   CPortController::instance().unlock();
+   p.lock();
+   p.SelectPort(eConnectedPort);
+   CLEDController::SetAllColorsOnFace(0x01,0x01,0x02);
+   p.unlock();
    
    System::instance().exit_task();
 }
 
 
+
+void LEDtask(){
+	System sys = System::instance();
+	
+	sys.schedule_task((void*) InitPortController, nullptr);
+    sys.sleep(1000);
+	sys.schedule_task((void*) InitLEDs, nullptr);
+    sys.sleep(1000);
+    
+	sys.schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::TOP);
+	sys.schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::BOTTOM);
+	
+	sys.exit_task();
+}
 
 /******************************************** Others ******************************************/
 
@@ -308,18 +325,186 @@ void dummy5(){
 	}
 }
 
-void LEDtask(){
-	TestPortController();
-	InitLEDs();
+
+/******************************************** NFC ******************************************/
+
+
+void InitNFC(){
+
+  CHUARTController::instance().lock();
+  printf("[%d]\tInitiating NFC\r\n", CTimer::instance().GetMilliseconds());
+  CHUARTController::instance().unlock();
+ 
+ 
+  CPortController p = CPortController::instance(); 
+  CNFCController nfc;
+
+  for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
+      if(eConnectedPort != CPortController::EPort::NULLPORT) {
+         p.lock();
+         p.SelectPort(eConnectedPort);
+         p.EnablePort(eConnectedPort);
+         //3 attempts to init NFC
+     	 for(uint8_t unAttempts = 3; unAttempts > 0; unAttempts--) {
+		   	if(nfc.Probe() == true) {
+			  if(nfc.ConfigureSAM() == true) {
+				 if(nfc.PowerDown() == true) {
+		            setFaceColor(3, 0x04, eConnectedPort);
+		            break;
+				 }
+			  }   
+		   	}
+            System::instance().sleep(100);
+         }
+         
+         p.unlock();
+      }
+   }
+   
+   System::instance().sleep(10);
+   System::instance().exit_task();
+}
+
+
+void NFCTransmit(){
+	CPortController p = CPortController::instance(); 
+	CHUARTController huart = CHUARTController::instance();
 	
-	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::NORTH);
-	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::EAST);
-	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::SOUTH);
-	//System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::WEST);
-	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::TOP);
-	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::BOTTOM);
+	huart.lock();
+	printf("NFC transmission\r\n");
+	huart.unlock();
+
+	for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
+		if(eConnectedPort != CPortController::EPort::NULLPORT) {
+
+		   huart.lock();
+		   printf("On port %s : ", p.GetPortString(eConnectedPort) );
+		   huart.unlock();		   
+		   
+		   uint8_t punOutboundBuffer[] = {'S','M','A','R','T','B','L','K','0','2'};
+		   uint8_t punInboundBuffer[20];
+		   uint8_t unRxCount = 0;
+		   
+		   p.lock();
+		   p.SelectPort(eConnectedPort);
+					 	 
+		   CNFCController nfc;
+		   if(nfc.P2PInitiatorInit()) {
+			  unRxCount = nfc.P2PInitiatorTxRx(punOutboundBuffer,10,punInboundBuffer,20);
+		   }
+		   nfc.PowerDown();
+
+		   System::instance().sleep(100);
+		   p.ClearInterrupts();
+		   p.unlock();
+		 
+		   if (unRxCount > 0){ //success
+				setFaceColor(2, 0x04, eConnectedPort);
+		   }
+		   else{  //failure
+		   		setFaceColor(0, 0x04, eConnectedPort);
+		   }
+
+		}
+	}
+}
+
+
+
+void NFCReact(){
+	CPortController p = CPortController::instance(); 
+	CHUARTController huart = CHUARTController::instance();
 	
-	System::instance().exit_task();
+	p.lock();
+    p.SynchronizeInterrupts();
+	if(p.HasInterrupts()) {
+		uint8_t unIRQs = p.GetInterrupts();
+		p.unlock();
+				    
+		huart.lock();
+		printf("NFC : received irq(0x%02X)\r\n", unIRQs);
+		huart.unlock();
+					
+		for(CPortController::EPort eRxPort : m_peConnectedPorts) {
+        	if(eRxPort != CPortController::EPort::NULLPORT) {
+		    	if((unIRQs >> static_cast<uint8_t>(eRxPort)) & 0x01) {
+					uint8_t punOutboundBuffer[] = {'S','B','0','1'};
+				    uint8_t punInboundBuffer[8];
+				    uint8_t unRxCount = 0;
+				             
+				    p.lock();
+				    p.SelectPort(eRxPort);
+				             
+				    CNFCController nfc;
+				    if(nfc.P2PTargetInit()) {
+				    	unRxCount = nfc.P2PTargetTxRx(punOutboundBuffer, 4, punInboundBuffer, 8);
+				    }
+				    System::instance().sleep(60);
+				    nfc.PowerDown();
+				    System::instance().sleep(100);
+				    p.ClearInterrupts();
+				    p.unlock();
+
+				    for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
+				    	uint8_t unColor = (uint8_t) punInboundBuffer[0];
+				    			    
+						huart.lock();
+						printf("Asked for color %d\r\n", unColor);
+						huart.unlock();
+				    	setFaceColor(1, 0x20, eConnectedPort);
+					}
+				}//if
+			}//if
+	    }//for
+	}
+	else
+		p.unlock();
+}
+
+
+void NFCtask(){
+
+	System sys = System::instance();
+	CHUARTController huart = CHUARTController::instance();
+	
+	sys.schedule_task((void*) InitPortController, nullptr);
+    sys.sleep(1000);
+    huart.lock();
+    printf("printing doesnt work from there ah!\r\n");
+    huart.unlock();
+	sys.schedule_task((void*) InitLEDs, nullptr);
+    sys.sleep(1000);
+	sys.schedule_task((void*) InitNFC, nullptr);
+    sys.sleep(1000);
+    
+    
+    
+    
+    while(true){
+    	 uint8_t unInput = 0;
+    	 
+    	 //check input from user
+    	 huart.lock();
+         if(huart.Available()) {
+            unInput = huart.Read();
+            //flush
+            while(huart.Available())
+               huart.Read();
+         }
+    	 huart.unlock();
+    	 
+    	 //transmit something
+    	 if(unInput == 't'){
+			  NFCTransmit();
+    	 }
+    	 else {
+    	 	NFCReact();
+    	 }
+    } //while
+    
+    
+    
+    System::instance().exit_task();
 }
 
 
@@ -333,25 +518,19 @@ int main(void){
 	
    stdout = CHUARTController::instance().get_file();
    
-   printRAMUsage("main", false);
    //Led test
-   System::instance().schedule_task((void*) LEDtask, nullptr); 
+   //System::instance().schedule_task((void*) LEDtask, nullptr); 
      
-   /*
+   
    //Accelerometer test
-   InitMPU6050();
-   System::instance().schedule_task((void*) TestAccelerometer, (void*) 2);   
-   System::instance().schedule_task((void*) TestAccelerometer, (void*) 7);
-   */
+   //InitMPU6050();
+   //System::instance().schedule_task((void*) TestAccelerometer, nullptr);   
+
    
-   //
-   printRAMUsage("main", false);
-   printf("\tStackTop : %u\r\n", stackTop);
-   printf("\ttasksStackTop : %u\r\n", tasksStackTop);
-   printf("\ttask SP's : [%u, %u, %u]\r\n", tasks[0].sp, tasks[1].sp, tasks[2].sp);
-   //SP of task 1 and 2 will be 0 as they did not start yet.
-   printf("End of RAM informations.\r\n");
+   //NFC test
+   System::instance().schedule_task((void*) NFCtask, nullptr); 
    
+   //printRAMUsage("start", false);
    printf("\r\nStarting the program...\r\n");   
    return System::instance().run();  
 }
