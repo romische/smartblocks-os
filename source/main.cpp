@@ -503,7 +503,7 @@ int main(void){
    stdout = CHUARTController::instance().get_file();
    
    //Led test
-   //System::instance().schedule_task((void*) LEDtask, nullptr); 
+   System::instance().schedule_task((void*) LEDtask, nullptr); 
      
    
    //Accelerometer test
@@ -511,7 +511,7 @@ int main(void){
    //System::instance().schedule_task((void*) TestAccelerometer, nullptr);   
    
    //NFC test
-   System::instance().schedule_task((void*) NFCtask, nullptr); 
+   //System::instance().schedule_task((void*) NFCtask, nullptr); 
    
    //printRAMUsage("start", false);
    printf("\r\nStarting the program...\r\n");   

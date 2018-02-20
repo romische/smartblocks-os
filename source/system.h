@@ -17,7 +17,7 @@
 
 
 #define TASK_STACK_SIZE 256
-#define MAX_TASKS 2
+#define MAX_TASKS 3
 #define TICK_INTERVAL 10
 
 #define stackPointer uint8_t*

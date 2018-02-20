@@ -32,6 +32,7 @@ public:
 		cli();
 		locked=false;
 		sei();
+		System::instance().yield();  //yield here to let other take the resource
 	}
 
 private:
