@@ -171,7 +171,7 @@ CPortController::EPort m_peConnectedPorts[NUM_PORTS] {
 /* Construct the list m_peConnectedPorts and print the connected ports */
 void InitPortController() {
 
-   LOG("Creating list of connected ports", "")
+   //LOG("Creating list of connected ports", "")
 	
 	
    /* Init the CPortController */
@@ -216,7 +216,7 @@ void InitPortController() {
 
 void InitLEDs(){
 
-  LOG("Initiating LEDs", "")
+  //LOG("Initiating LEDs", "")
 
   for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
       if(eConnectedPort != CPortController::EPort::NULLPORT) {
@@ -226,7 +226,7 @@ void InitLEDs(){
      	 
          CLEDController::Init();
          CLEDController::SetAllModesOnFace(CLEDController::EMode::PWM);
-         CLEDController::SetAllColorsOnFace(0x01,0x01,0x02);
+         CLEDController::SetAllColorsOnFace(0x01,0x01,0x00);
          
          CPortController::instance().unlock();
       }
@@ -259,7 +259,7 @@ void setFaceColor(uint8_t unColor, uint8_t unVal, CPortController::EPort eConnec
 
 void VariateLEDsOnPort(CPortController::EPort eConnectedPort){
 
-   LOG("Variating LEDs on port ", CPortController::instance().GetPortString(eConnectedPort));
+   //LOG("Variating LEDs on port ", CPortController::instance().GetPortString(eConnectedPort));
 
    	  
    //foreach color  (red 0, green 1, blue 2, white 3 )
@@ -324,7 +324,7 @@ void dummy5(){
 
 void InitNFC(){
 
-  LOG("Initiating NFC", "")
+  //LOG("Init NFC", "")
 
   CNFCController nfc;
 
@@ -341,7 +341,7 @@ void InitNFC(){
 		   	if(nfc.Probe() == true) {
 			  if(nfc.ConfigureSAM() == true) {
 				 if(nfc.PowerDown() == true) {
-		            setFaceColor(BLUE, 0x04, eConnectedPort);
+		            CLEDController::SetAllColorsOnFace(0x01,0x01,0x02);
 		            break;
 				 }
 			  }   
@@ -360,14 +360,14 @@ void InitNFC(){
 
 void NFCTransmit(){
 	
-	LOG("NFC transmission", "")
+	LOG("send msg", "")
 
     //on each face
 	for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
 		if(eConnectedPort != CPortController::EPort::NULLPORT) {
 		   
-		   uint8_t punOutboundBuffer[] = {'S','M','A','R','T','B','L','K','0','2'};
-		   uint8_t punInboundBuffer[20];
+		   uint8_t punOutboundBuffer[] = {'T','M'};
+		   uint8_t punInboundBuffer[2];
 		   uint8_t unRxCount = 0;
 		   
 		   //select face
@@ -377,7 +377,7 @@ void NFCTransmit(){
 		   //transmit
 		   CNFCController nfc;
 		   if(nfc.P2PInitiatorInit()) {
-			  unRxCount = nfc.P2PInitiatorTxRx(punOutboundBuffer,10,punInboundBuffer,20);
+			  unRxCount = nfc.P2PInitiatorTxRx(punOutboundBuffer,2,punInboundBuffer,2);
 		   }
 		   nfc.PowerDown();
 
@@ -385,7 +385,6 @@ void NFCTransmit(){
 		   CPortController::instance().ClearInterrupts();
 		 
 		   if (unRxCount > 0){ //success
-		   		LOG("NFC transmission succeed on port ", CPortController::instance().GetPortString(eConnectedPort))
 				setFaceColor(GREEN, 0x04, eConnectedPort);
 		   }
 		   else{  //failure
@@ -407,34 +406,25 @@ void NFCReact(){
 	if(CPortController::instance().HasInterrupts()) {
 		uint8_t unIRQs = CPortController::instance().GetInterrupts();
 		CPortController::instance().unlock();
-
-		char str[10];
-		sprintf(str, "PortController interrupt code : %u", unIRQs);
-		LOG(str, "")
 		
 		//for each face
 		for(CPortController::EPort eRxPort : m_peConnectedPorts) {
         	if(eRxPort != CPortController::EPort::NULLPORT) {
         		//on the face corresponding to the interrupt
 		    	if((unIRQs >> static_cast<uint8_t>(eRxPort)) & 0x01) {
-				   	uint8_t punOutboundBuffer[] = {'S','M','A','R','T','B','L','K','0','2'};
-				   	uint8_t punInboundBuffer[20];
+				   	uint8_t punOutboundBuffer[] = {'R','C'};
+				   	uint8_t punInboundBuffer[2];
 				    uint8_t unRxCount = 0;
-				    
-				    LOG("corresponding to face ",CPortController::instance().GetPortString(eRxPort))
 				    
 				    CPortController::instance().lock();
 				    CPortController::instance().SelectPort(eRxPort);
 				             
 				    CNFCController nfc;
 				    if(nfc.P2PTargetInit()) {
-				    	unRxCount = nfc.P2PTargetTxRx(punOutboundBuffer, 4, punInboundBuffer, 8);
+				    	unRxCount = nfc.P2PTargetTxRx(punOutboundBuffer, 2, punInboundBuffer, 2);
 				    	if (unRxCount>0){
-         					LOG("NFC message received on face ", CPortController::instance().GetPortString(eRxPort))
+         					LOG("msg on ", CPortController::instance().GetPortString(eRxPort))
          					setFaceColor(GREEN, 0x04, eRxPort);
-				    	}
-				    	else{
-				    		LOG("no message", "")
 				    	}
 				    }
 				    System::instance().sleep(60);
@@ -503,7 +493,7 @@ int main(void){
    stdout = CHUARTController::instance().get_file();
    
    //Led test
-   System::instance().schedule_task((void*) LEDtask, nullptr); 
+   //System::instance().schedule_task((void*) LEDtask, nullptr); 
      
    
    //Accelerometer test
@@ -511,10 +501,10 @@ int main(void){
    //System::instance().schedule_task((void*) TestAccelerometer, nullptr);   
    
    //NFC test
-   //System::instance().schedule_task((void*) NFCtask, nullptr); 
+   System::instance().schedule_task((void*) NFCtask, nullptr); 
    
    //printRAMUsage("start", false);
-   printf("\r\nStarting the program...\r\n");   
+   printf("\r\nStarting...\r\n");   
    return System::instance().run();  
 }
 
