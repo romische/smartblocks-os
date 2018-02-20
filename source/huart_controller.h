@@ -79,6 +79,8 @@ private:
 
    /* constructor */
    CHUARTController();
+   CHUARTController(CHUARTController const&);
+   void operator=(CHUARTController const&);
 };
 
 #endif

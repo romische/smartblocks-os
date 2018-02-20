@@ -72,6 +72,8 @@ public:
 private:
 
    CTWController();
+   CTWController(CTWController const&);
+   void operator=(CTWController const&);
 
    static CTWController m_cTWController;
 };

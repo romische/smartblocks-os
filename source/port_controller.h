@@ -52,8 +52,11 @@ public:
    const char* GetPortString(EPort ePort);
 
 private:
+
    static CPortController _port_controller; //singleton instance
    CPortController();
+   CPortController(CPortController const&);
+   void operator=(CPortController const&);
    
 private:
    enum class EPCA9554Register : uint8_t {

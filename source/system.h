@@ -17,7 +17,7 @@
 
 
 #define TASK_STACK_SIZE 256
-#define MAX_TASKS 3
+#define MAX_TASKS 2
 #define TICK_INTERVAL 10
 
 #define stackPointer uint8_t*
@@ -34,6 +34,8 @@ class System {
 	
 private:
 	System();
+    System(System const&);
+    void operator=(System const&);
 	static System _system;
 	
 public:

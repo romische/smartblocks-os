@@ -34,7 +34,6 @@ public:
 		sei();
 	}
 
-
 private:
 	volatile bool locked = false;
 };
