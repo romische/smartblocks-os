@@ -180,8 +180,6 @@ void InitPortController() {
    System::instance().sleep(10);
    CPortController::instance().Init();
 
-   // disable tw before??
-
    /* Fill the list m_peConnectedPorts */
    for(CPortController::EPort& ePort : m_peAllPorts) {
       if(CPortController::instance().IsPortConnected(ePort)) {
@@ -261,32 +259,37 @@ void VariateLEDsOnPort(CPortController::EPort eConnectedPort){
 
    //LOG("Variating LEDs on port ", CPortController::instance().GetPortString(eConnectedPort));
 
-   	  
    //foreach color  (red 0, green 1, blue 2, white 3 )
-   for(uint8_t unColor = 0; unColor < 4; unColor++) {
-   	  
+   //for(uint8_t unColor = 0; unColor < 4; unColor++) 
+   
+   uint8_t unColor = static_cast<uint8_t>(eConnectedPort); //!! works only for north, east, south, west
+   while(true){	  
    	  //set color and increase brightness
-      for(uint8_t unVal = 0x00; unVal < 0x40; unVal++) { 
-	    CPortController::instance().lock();
+      for(uint8_t unVal = 0x00; unVal < 0x30; unVal++) { 
+	    //CPortController::instance().lock();
 	    CPortController::instance().SelectPort(eConnectedPort);
       	setFaceColor(unColor, unVal, eConnectedPort);
-      	CPortController::instance().unlock();
+      	//CPortController::instance().unlock();
       }
       
    	  //then decrease brightness
-      for(uint8_t unVal = 0x40; unVal > 0x00; unVal--) {
-	    CPortController::instance().lock();
+      for(uint8_t unVal = 0x30; unVal > 0x00; unVal--) {
+	    //CPortController::instance().lock();
 	    CPortController::instance().SelectPort(eConnectedPort);
       	setFaceColor(unColor, unVal, eConnectedPort);
-      	CPortController::instance().unlock();
+      	//CPortController::instance().unlock();
       }
+      
+      
+	   //finally set all colors on a low value
+	   //CPortController::instance().lock();
+	   CPortController::instance().SelectPort(eConnectedPort);
+	   System::instance().yield();
+	   CLEDController::SetAllColorsOnFace(0x01,0x01,0x02);
+	   //CPortController::instance().unlock();
+	   
+	   System::instance().sleep(1000);
    }
-   
-   //finally set all colors on a low value
-   CPortController::instance().lock();
-   CPortController::instance().SelectPort(eConnectedPort);
-   CLEDController::SetAllColorsOnFace(0x01,0x01,0x02);
-   CPortController::instance().unlock();
    
    System::instance().exit_task();
 }
@@ -300,8 +303,8 @@ void LEDtask(){
 	System::instance().schedule_task((void*) InitLEDs, nullptr);
     System::instance().sleep(1000);
     
-	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::TOP);
-	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::BOTTOM);
+	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::NORTH);
+	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::EAST);
 	
 	System::instance().exit_task();
 }
@@ -493,7 +496,7 @@ int main(void){
    stdout = CHUARTController::instance().get_file();
    
    //Led test
-   //System::instance().schedule_task((void*) LEDtask, nullptr); 
+   System::instance().schedule_task((void*) LEDtask, nullptr); 
      
    
    //Accelerometer test
@@ -501,7 +504,7 @@ int main(void){
    //System::instance().schedule_task((void*) TestAccelerometer, nullptr);   
    
    //NFC test
-   System::instance().schedule_task((void*) NFCtask, nullptr); 
+   //System::instance().schedule_task((void*) NFCtask, nullptr); 
    
    //printRAMUsage("start", false);
    printf("\r\nStarting...\r\n");   

@@ -17,7 +17,7 @@
 
 
 #define TASK_STACK_SIZE 256
-#define MAX_TASKS 2
+#define MAX_TASKS 3
 #define TICK_INTERVAL 10
 
 #define stackPointer uint8_t*
@@ -26,6 +26,7 @@ struct task_definition {
     stackPointer sp;
     bool running;
     int sleep_time;
+    uint8_t savedPORTC;
 };
 typedef struct task_definition task_definition;
 
