@@ -12,6 +12,8 @@ public:
 
 private:
    CTimer();
+   CTimer(CTimer const&);
+   void operator=(CTimer const&);
    static CTimer _timer;
 };
 
