@@ -323,7 +323,9 @@ void InitNFC(){
 		   	if(nfc.Probe() == true) {
 			  if(nfc.ConfigureSAM() == true) {
 				 if(nfc.PowerDown() == true) {
-		            //CLEDController::SetAllColorsOnFace(eConnectedPort,0x01,0x01,0x02); //!\ deadlock here
+				 	CPortController::instance().unlock();
+		            CLEDController::SetAllColorsOnFace(eConnectedPort,0x01,0x01,0x02); //!\ deadlock here
+		            CPortController::instance().lock();
 		            break;
 				 }
 			  }   
@@ -342,7 +344,7 @@ void InitNFC(){
 
 void NFCTransmit(){
 	
-	LOG("send msg", "")
+	LOG("send msg TM", "")
 	
 	
 
@@ -367,6 +369,7 @@ void NFCTransmit(){
 
 		   System::instance().sleep(100);
 		   CPortController::instance().ClearInterrupts(); //why clear interrupts?
+		   CPortController::instance().unlock();
 		 
 		   if (unRxCount > 0){ //success
 				setFaceColor(GREEN, 0x04, eConnectedPort);
@@ -376,7 +379,6 @@ void NFCTransmit(){
 		   }
 		   
 		   
-		   CPortController::instance().unlock();
 
 		}
 	}
@@ -389,12 +391,12 @@ void NFCReact(){
     CPortController::instance().SynchronizeInterrupts();
 	if(CPortController::instance().HasInterrupts()) {
 		uint8_t unIRQs = CPortController::instance().GetInterrupts();
+		CPortController::instance().ClearInterrupts(unIRQs);
 		CPortController::instance().unlock();
 		
-		CHUARTController::instance().lock(); 
-  		fprintf(CHUARTController::instance().get_file(), "irq(%u)\t", unIRQs);
-  		CHUARTController::instance().unlock();
-		
+		CHUARTController::instance().lock();
+		printf("irq %u\r\n", unIRQs);
+		CHUARTController::instance().unlock();
 		
 		//for each face
 		for(CPortController::EPort eRxPort : m_peConnectedPorts) {
@@ -413,13 +415,13 @@ void NFCReact(){
 				    	unRxCount = nfc.P2PTargetTxRx(punOutboundBuffer, 2, punInboundBuffer, 2);
 				    	if (unRxCount>0){
          					LOG("msg on ", CPortController::instance().GetPortString(eRxPort))
-         					setFaceColor(GREEN, 0x04, eRxPort);
+         					//setFaceColor(GREEN, 0x04, eRxPort);
 				    	}
 				    }
 				    System::instance().sleep(60);
 				    nfc.PowerDown();
 				    System::instance().sleep(100);
-				    CPortController::instance().ClearInterrupts(unIRQs);
+				    //CPortController::instance().ClearInterrupts(unIRQs); //moved up
 				    CPortController::instance().unlock();
 
 				}//if
@@ -430,21 +432,10 @@ void NFCReact(){
 		CPortController::instance().unlock();
 }
 
+void InteractiveMode(){
 
-void NFCtask(){
-	
-	//init list of connected ports
-	System::instance().schedule_task((void*) InitPortController, nullptr);
-    System::instance().sleep(1000);
-    
-    //init leds
-	System::instance().schedule_task((void*) InitLEDs, nullptr);
-    System::instance().sleep(1000);
-    
-    //init nfc
-	System::instance().schedule_task((void*) InitNFC, nullptr);
-    System::instance().sleep(1000);
-    
+	LOG("intmod","")
+
     //loop
     while(true){
     	 uint8_t unInput = 0;
@@ -466,6 +457,25 @@ void NFCtask(){
     	 	NFCReact();
     	 }
     }
+}
+
+void NFCtask(){
+	
+	//init list of connected ports
+	System::instance().schedule_task((void*) InitPortController, nullptr);
+    System::instance().sleep(1000);
+    
+    //init leds
+	System::instance().schedule_task((void*) InitLEDs, nullptr);
+    System::instance().sleep(1000);
+    
+    //init nfc
+	System::instance().schedule_task((void*) InitNFC, nullptr);
+    System::instance().sleep(1000);
+    
+    System::instance().schedule_task((void*) InteractiveMode, nullptr);
+    System::instance().schedule_task((void*) InteractiveMode, nullptr);
+
     
     System::instance().exit_task();
 }
@@ -482,7 +492,7 @@ int main(void){
    stdout = CHUARTController::instance().get_file();
    
    //Led test
-   System::instance().schedule_task((void*) LEDtask, nullptr); 
+   //System::instance().schedule_task((void*) LEDtask, nullptr); 
      
      
    //System::instance().schedule_task((void*) dummy5, nullptr);   
@@ -493,7 +503,7 @@ int main(void){
    //System::instance().schedule_task((void*) TestAccelerometer, nullptr);   
    
    //NFC test
-   //System::instance().schedule_task((void*) NFCtask, nullptr); 
+   System::instance().schedule_task((void*) NFCtask, nullptr); 
    
    //printRAMUsage("start", false);
    printf("\r\nStarting...\r\n");   
