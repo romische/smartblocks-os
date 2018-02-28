@@ -250,13 +250,8 @@ void setFaceColor(uint8_t unColor, uint8_t unVal, CPortController::EPort eConnec
 }
 
 void VariateLEDsOnPort(CPortController::EPort eConnectedPort){
-
-   //LOG("Variating LEDs on port ", CPortController::instance().GetPortString(eConnectedPort));
-
-   //foreach color  (red 0, green 1, blue 2, white 3 )
-   //for(uint8_t unColor = 0; unColor < 4; unColor++) 
    
-   uint8_t unColor = static_cast<uint8_t>(eConnectedPort); //!! works only for north, east, south, west
+   uint8_t unColor = static_cast<uint8_t>(eConnectedPort)%4; 
    while(true){	  
    	  //set color and increase brightness
       for(uint8_t unVal = 0x00; unVal < 0x30; unVal++) { 
