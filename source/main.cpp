@@ -364,6 +364,8 @@ void InitNFC(){
 void NFCTransmit(){
 	
 	LOG("send msg", "")
+	
+	
 
     //on each face
 	for(CPortController::EPort& eConnectedPort : m_peConnectedPorts) {
@@ -385,7 +387,7 @@ void NFCTransmit(){
 		   nfc.PowerDown();
 
 		   System::instance().sleep(100);
-		   CPortController::instance().ClearInterrupts();
+		   CPortController::instance().ClearInterrupts(); //why clear interrupts?
 		 
 		   if (unRxCount > 0){ //success
 				setFaceColor(GREEN, 0x04, eConnectedPort);
@@ -410,6 +412,11 @@ void NFCReact(){
 		uint8_t unIRQs = CPortController::instance().GetInterrupts();
 		CPortController::instance().unlock();
 		
+		CHUARTController::instance().lock(); 
+  		fprintf(CHUARTController::instance().get_file(), "irq(%u)\t", unIRQs);
+  		CHUARTController::instance().unlock();
+		
+		
 		//for each face
 		for(CPortController::EPort eRxPort : m_peConnectedPorts) {
         	if(eRxPort != CPortController::EPort::NULLPORT) {
@@ -433,7 +440,7 @@ void NFCReact(){
 				    System::instance().sleep(60);
 				    nfc.PowerDown();
 				    System::instance().sleep(100);
-				    CPortController::instance().ClearInterrupts();
+				    CPortController::instance().ClearInterrupts(unIRQs);
 				    CPortController::instance().unlock();
 
 				}//if
@@ -496,8 +503,11 @@ int main(void){
    stdout = CHUARTController::instance().get_file();
    
    //Led test
-   System::instance().schedule_task((void*) LEDtask, nullptr); 
+   //System::instance().schedule_task((void*) LEDtask, nullptr); 
      
+     
+   System::instance().schedule_task((void*) dummy5, nullptr);   
+   
    
    //Accelerometer test
    //InitMPU6050();
