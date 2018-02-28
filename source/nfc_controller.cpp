@@ -354,6 +354,7 @@ void CNFCController::write_cmd(uint8_t *cmd, uint8_t len)
     System::instance().sleep(2);    // or whatever the delay is for waking up the board
 
     // I2C START
+    CTWController::GetInstance().lock();
     CTWController::GetInstance().BeginTransmission(PN532_I2C_ADDRESS);
     checksum = PN532_PREAMBLE + PN532_PREAMBLE + PN532_STARTCODE2;
     CTWController::GetInstance().Write(PN532_PREAMBLE);
@@ -381,6 +382,7 @@ void CNFCController::write_cmd(uint8_t *cmd, uint8_t len)
 
     // I2C STOP
     uint8_t err = CTWController::GetInstance().EndTransmission();
+    CTWController::GetInstance().unlock();
 
 }
 
@@ -398,11 +400,15 @@ bool CNFCController::read_dt(uint8_t *buf, uint8_t len) {
    for(uint8_t i = 0; i < 25; i++) {
       System::instance().sleep(10);
       // Start read (n+1 to take into account leading 0x01 with I2C)
+      CTWController::GetInstance().lock();
       CTWController::GetInstance().Read(PN532_I2C_ADDRESS, len + 2, true);
       // Read the status byte
       unStatus = CTWController::GetInstance().Read();
     
       if(unStatus == PN532_I2C_READY) {
+      	 for(uint8_t i=0; i<len; i++) {
+		    buf[i] = CTWController::GetInstance().Read();
+		 }
          break;
       }
       else {
@@ -411,13 +417,9 @@ bool CNFCController::read_dt(uint8_t *buf, uint8_t len) {
             CTWController::GetInstance().Read();
          }
       }
+      CTWController::GetInstance().unlock();
    }
 
-   if(unStatus == PN532_I2C_READY) {
-      for(uint8_t i=0; i<len; i++) {
-         buf[i] = CTWController::GetInstance().Read();
-      }
-   }
    // Discard trailing 0x00 0x00
    // receive();
    return (unStatus == PN532_I2C_READY);
