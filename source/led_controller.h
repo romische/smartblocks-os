@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "tw_controller.h" 
+#include "port_controller.h" 
 
 class CLEDController {
 public:
@@ -14,18 +15,18 @@ public:
       BLINK = 0x03,
    };
 
-   static void Init();
+   static void Init(CPortController::EPort e_port);
 
-   static void SetMode(uint8_t un_led, EMode e_mode);
-   static void SetBrightness(uint8_t un_led, uint8_t un_val);
+   static void SetMode(CPortController::EPort e_port, uint8_t un_led, EMode e_mode);
+   static void SetBrightness(CPortController::EPort e_port, uint8_t un_led, uint8_t un_val);
 
-   static void SetColor(uint8_t un_led_pack, uint8_t unRed, uint8_t unGreen, uint8_t unBlue); 
+   static void SetColor(CPortController::EPort e_port, uint8_t un_led_pack, uint8_t unRed, uint8_t unGreen, uint8_t unBlue); 
 
-   static void SetBlinkRate(uint8_t un_period, uint8_t un_duty_cycle);
+   static void SetBlinkRate(CPortController::EPort e_port, uint8_t un_period, uint8_t un_duty_cycle);
    
    
-   static void SetAllColorsOnFace(uint8_t unRed, uint8_t unGreen, uint8_t unBlue);
-   static void SetAllModesOnFace(EMode e_mode);
+   static void SetAllColorsOnFace(CPortController::EPort e_port, uint8_t unRed, uint8_t unGreen, uint8_t unBlue);
+   static void SetAllModesOnFace(CPortController::EPort e_port, EMode e_mode);
 
 private:
 
