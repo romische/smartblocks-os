@@ -5,6 +5,7 @@
 #include "system.h" //for sleep(int) in write_cmd and read_dt
 					//!!\ this implies that CPortController can only be used in the multitasking context
 #include "huart_controller.h" //for printing in puthex
+#include "port_controller.h" 
 
 #ifndef NFC_CONTROLLER_H
 #define NFC_CONTROLLER_H
