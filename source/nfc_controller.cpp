@@ -398,7 +398,6 @@ bool CNFCController::read_dt(uint8_t *buf, uint8_t len) {
    uint8_t unStatus = PN532_I2C_BUSY;
    // attempt to read response twenty times
    for(uint8_t i = 0; i < 25; i++) {
-      System::instance().sleep(10);
       // Start read (n+1 to take into account leading 0x01 with I2C)
       CTWController::GetInstance().lock();
       CTWController::GetInstance().Read(PN532_I2C_ADDRESS, len + 2, true);
@@ -409,7 +408,8 @@ bool CNFCController::read_dt(uint8_t *buf, uint8_t len) {
       	 for(uint8_t i=0; i<len; i++) {
 		    buf[i] = CTWController::GetInstance().Read();
 		 }
-         break;
+		 CTWController::GetInstance().unlock(); //!
+         return true;
       }
       else {
          // flush the buffer
@@ -418,6 +418,7 @@ bool CNFCController::read_dt(uint8_t *buf, uint8_t len) {
          }
       }
       CTWController::GetInstance().unlock();
+      System::instance().sleep(10);
    }
 
    // Discard trailing 0x00 0x00
