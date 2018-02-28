@@ -26,7 +26,6 @@ struct task_definition {
     stackPointer sp;
     bool running;
     int sleep_time;
-    uint8_t savedPORTC;
 };
 typedef struct task_definition task_definition;
 

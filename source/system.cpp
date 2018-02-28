@@ -96,7 +96,6 @@ int System::schedule_task(void* address, void* args){
 	tasks[task_num].sleep_time=-1;
 	tasks[task_num].running=true;
 	
-	tasks[task_num].savedPORTC = PORTC;
 	sei();
 	
 	return 0;
@@ -172,19 +171,14 @@ void do_something_else() {
 
     SAVE_CONTEXT(tempSp)
 	
+   
     if(current_task == -1)	stackTop = tempSp;
-    else {
-    	tasks[current_task].sp=tempSp;
-    	tasks[current_task].savedPORTC=PORTC;
-    }
+    else 					tasks[current_task].sp=tempSp;
 		
 	current_task = chooseNextTask();
 
     if(current_task == -1) 	tempSp = stackTop;
-    else {
-    	tempSp=tasks[current_task].sp;
-    	PORTC = tasks[current_task].savedPORTC;
-    }
+    else 				  	tempSp=tasks[current_task].sp;
 
 
     RESTORE_CONTEXT(tempSp)
@@ -203,18 +197,12 @@ ISR(TIMER0_COMPA_vect, ISR_NAKED) {
 	update_sleep_time();
 	
     if(current_task == -1)	stackTop = tempSp;
-    else {
-    	tasks[current_task].sp=tempSp;
-    	tasks[current_task].savedPORTC=PORTC;
-    }
+    else 					tasks[current_task].sp=tempSp;
 		
 	current_task = chooseNextTask();
 
     if(current_task == -1) 	tempSp = stackTop;
-    else {
-    	tempSp=tasks[current_task].sp;
-    	PORTC = tasks[current_task].savedPORTC;
-    }
+    else 				  	tempSp=tasks[current_task].sp;
 
     RESTORE_CONTEXT(tempSp)
     asm volatile("reti");
