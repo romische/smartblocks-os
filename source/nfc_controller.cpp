@@ -7,6 +7,59 @@ uint8_t ack[6]={
 uint8_t nfc_version[6]={
     0x00, 0xFF, 0x06, 0xFA, 0xD5, 0x03
 };
+uint8_t default_response[1] = {'T'};
+uint8_t default_response_len = 1;
+
+
+/***********************************************************/
+/***********************************************************/
+
+bool CNFCController::Init(){
+	bool success = false;
+         //3 attempts to init NFC
+    for(uint8_t unAttempts = 3; unAttempts > 0; unAttempts--) {
+	   	if(Probe() == true) {
+		  if(ConfigureSAM() == true) {
+			 if(PowerDown() == true) {
+			 	success=true;
+	            break;
+			 }
+		  }   
+	   	}
+        System::instance().sleep(100);
+    }
+    return success;
+}
+
+
+bool CNFCController::Send(uint8_t* msg, uint8_t len){
+	uint8_t unRxCount = 0;
+	uint8_t punInboundBuffer[default_response_len];
+	
+	if(P2PInitiatorInit()) {
+		unRxCount = P2PInitiatorTxRx(msg, len, punInboundBuffer, default_response_len);
+	}
+	PowerDown();
+	System::instance().sleep(100);
+	
+	return (unRxCount == default_response_len && punInboundBuffer[0]==default_response[0]); //or just unRxCount>0 ?
+}
+
+/*
+ * msg is an empty buffer
+ */
+bool CNFCController::Receive(uint8_t* msg, uint8_t len){
+	uint8_t unRxCount = 0;
+	if(P2PTargetInit()) {
+		unRxCount = P2PTargetTxRx(default_response, default_response_len, msg, len);
+	}
+	System::instance().sleep(60);
+	PowerDown();
+	System::instance().sleep(100);
+	return (unRxCount>0);
+}
+
+
 
 /***********************************************************/
 /***********************************************************/

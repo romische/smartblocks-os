@@ -318,19 +318,11 @@ void InitNFC(){
          CPortController::instance().SelectPort(eConnectedPort);
          CPortController::instance().EnablePort(eConnectedPort);
          
-         //3 attempts to init NFC
-     	 for(uint8_t unAttempts = 3; unAttempts > 0; unAttempts--) {
-		   	if(nfc.Probe() == true) {
-			  if(nfc.ConfigureSAM() == true) {
-				 if(nfc.PowerDown() == true) {
-				 	CPortController::instance().unlock();
-		            CLEDController::SetAllColorsOnFace(eConnectedPort,0x01,0x01,0x02); //!\ deadlock here
-		            CPortController::instance().lock();
-		            break;
-				 }
-			  }   
-		   	}
-            System::instance().sleep(100);
+         bool success = nfc.Init();
+         if(success){
+			 CPortController::instance().unlock();
+			 CLEDController::SetAllColorsOnFace(eConnectedPort,0x01,0x01,0x02); 
+			 CPortController::instance().lock();
          }
          
          CPortController::instance().unlock();
@@ -353,7 +345,6 @@ void NFCTransmit(){
 		if(eConnectedPort != CPortController::EPort::NULLPORT) {
 		   
 		   uint8_t punOutboundBuffer[] = {'T','M'};
-		   uint8_t punInboundBuffer[2];
 		   uint8_t unRxCount = 0;
 		   
 		   //select face
@@ -362,23 +353,18 @@ void NFCTransmit(){
 		   
 		   //transmit
 		   CNFCController nfc;
-		   if(nfc.P2PInitiatorInit()) {
-			  unRxCount = nfc.P2PInitiatorTxRx(punOutboundBuffer,2,punInboundBuffer,2);
-		   }
-		   nfc.PowerDown();
+		   bool success = nfc.Send(punOutboundBuffer,2);
 
-		   System::instance().sleep(100);
 		   CPortController::instance().ClearInterrupts(); //why clear interrupts?
 		   CPortController::instance().unlock();
 		 
-		   if (unRxCount > 0){ //success
+		   if (success){
 				setFaceColor(GREEN, 0x04, eConnectedPort);
 		   }
-		   else{  //failure
+		   else{
 		   		setFaceColor(RED, 0x04, eConnectedPort);
 		   }
-		   
-		   
+
 
 		}
 	}
@@ -403,25 +389,21 @@ void NFCReact(){
         	if(eRxPort != CPortController::EPort::NULLPORT) {
         		//on the face corresponding to the interrupt
 		    	if((unIRQs >> static_cast<uint8_t>(eRxPort)) & 0x01) {
-				   	uint8_t punOutboundBuffer[] = {'R','C'};
 				   	uint8_t punInboundBuffer[2];
 				    uint8_t unRxCount = 0;
+				    
 				    
 				    CPortController::instance().lock();
 				    CPortController::instance().SelectPort(eRxPort);
 				             
 				    CNFCController nfc;
-				    if(nfc.P2PTargetInit()) {
-				    	unRxCount = nfc.P2PTargetTxRx(punOutboundBuffer, 2, punInboundBuffer, 2);
-				    	if (unRxCount>0){
-         					LOG("msg on ", CPortController::instance().GetPortString(eRxPort))
-         					//setFaceColor(GREEN, 0x04, eRxPort);
-				    	}
+				    if(nfc.Receive(punInboundBuffer, 2)){
+				    	LOG("msg on ", CPortController::instance().GetPortString(eRxPort))
+				    	CHUARTController::instance().lock();
+						printf("(msg is %c%c)\r\n",punInboundBuffer[0],punInboundBuffer[1]);
+						CHUARTController::instance().unlock();
 				    }
-				    System::instance().sleep(60);
-				    nfc.PowerDown();
-				    System::instance().sleep(100);
-				    //CPortController::instance().ClearInterrupts(unIRQs); //moved up
+
 				    CPortController::instance().unlock();
 
 				}//if

@@ -76,7 +76,13 @@ public:
    };
 
 
-   CNFCController() {}
+   CNFCController() {}  //remove and make everything static as in led_controller?
+   
+   bool Init();
+   
+   bool Send(uint8_t* msg, uint8_t  len);
+   
+   bool Receive(uint8_t* msg, uint8_t len);
 
    bool Probe();
 
@@ -97,8 +103,8 @@ public:
                          uint8_t  un_rx_buffer_len);
 
    bool PowerDown();
+   
 private:
-
    void write_cmd(uint8_t *cmd, uint8_t len);
    uint8_t write_cmd_check_ack(uint8_t *cmd, uint8_t len);
    bool read_dt(uint8_t *buf, uint8_t len);
