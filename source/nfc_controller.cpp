@@ -14,13 +14,13 @@ uint8_t default_response_len = 1;
 /***********************************************************/
 /***********************************************************/
 
-bool CNFCController::Init(){
+bool CNFCController::Init(CPortController::EPort e_port){
 	bool success = false;
          //3 attempts to init NFC
     for(uint8_t unAttempts = 3; unAttempts > 0; unAttempts--) {
-	   	if(Probe() == true) {
-		  if(ConfigureSAM() == true) {
-			 if(PowerDown() == true) {
+	   	if(Probe(e_port) == true) {
+		  if(ConfigureSAM(e_port) == true) {
+			 if(PowerDown(e_port) == true) {
 			 	success=true;
 	            break;
 			 }
@@ -32,14 +32,14 @@ bool CNFCController::Init(){
 }
 
 
-bool CNFCController::Send(uint8_t* msg, uint8_t len){
+bool CNFCController::Send(CPortController::EPort e_port, uint8_t* msg, uint8_t len){
 	uint8_t unRxCount = 0;
 	uint8_t punInboundBuffer[default_response_len];
 	
-	if(P2PInitiatorInit()) {
-		unRxCount = P2PInitiatorTxRx(msg, len, punInboundBuffer, default_response_len);
+	if(P2PInitiatorInit(e_port)) {
+		unRxCount = P2PInitiatorTxRx(e_port, msg, len, punInboundBuffer, default_response_len);
 	}
-	PowerDown();
+	PowerDown(e_port);
 	System::instance().sleep(100);
 	
 	return (unRxCount == default_response_len && punInboundBuffer[0]==default_response[0]); //or just unRxCount>0 ?
@@ -48,13 +48,13 @@ bool CNFCController::Send(uint8_t* msg, uint8_t len){
 /*
  * msg is an empty buffer
  */
-bool CNFCController::Receive(uint8_t* msg, uint8_t len){
+bool CNFCController::Receive(CPortController::EPort e_port, uint8_t* msg, uint8_t len){
 	uint8_t unRxCount = 0;
-	if(P2PTargetInit()) {
-		unRxCount = P2PTargetTxRx(default_response, default_response_len, msg, len);
+	if(P2PTargetInit(e_port)) {
+		unRxCount = P2PTargetTxRx(e_port,default_response, default_response_len, msg, len);
 	}
 	System::instance().sleep(60);
-	PowerDown();
+	PowerDown(e_port);
 	System::instance().sleep(100);
 	return (unRxCount>0);
 }
@@ -64,17 +64,17 @@ bool CNFCController::Receive(uint8_t* msg, uint8_t len){
 /***********************************************************/
 /***********************************************************/
 
-bool CNFCController::PowerDown() {
+bool CNFCController::PowerDown(CPortController::EPort e_port) {
    m_punIOBuffer[0] = static_cast<uint8_t>(ECommand::POWERDOWN);
    m_punIOBuffer[1] = 0x88; // Wake up on RF field & I2C
    m_punIOBuffer[2] = 0x01; // Generate an IRQ on wake up
    /* write command and check ack frame */
-   if(!write_cmd_check_ack(m_punIOBuffer, 3)) {
+   if(!write_cmd_check_ack(e_port, m_punIOBuffer, 3)) {
       return false;
    }
 
    /* read the rest of the reply */
-   read_dt(m_punIOBuffer, 8);
+   read_dt(e_port, m_punIOBuffer, 8);
    /* verify that the recieved data was a reply frame to given command */
    if(m_punIOBuffer[NFC_FRAME_DIRECTION_INDEX] != PN532_PN532TOHOST ||
       m_punIOBuffer[NFC_FRAME_ID_INDEX] - 1 != static_cast<uint8_t>(ECommand::POWERDOWN)) {
@@ -90,14 +90,14 @@ bool CNFCController::PowerDown() {
 /***********************************************************/
 /***********************************************************/
 
-bool CNFCController::Probe() {
+bool CNFCController::Probe(CPortController::EPort e_port) {
    m_punIOBuffer[0] = static_cast<uint8_t>(ECommand::GETFIRMWAREVERSION);
    /* write command and check ack frame */
-   if(!write_cmd_check_ack(m_punIOBuffer, 1)) {
+   if(!write_cmd_check_ack(e_port, m_punIOBuffer, 1)) {
       return false;
    }
    /* read the rest of the reply */
-   read_dt(m_punIOBuffer, 12);
+   read_dt(e_port, m_punIOBuffer, 12);
    /* verify that the recieved data was a reply frame to given command */
    if(m_punIOBuffer[NFC_FRAME_DIRECTION_INDEX] != PN532_PN532TOHOST ||
       m_punIOBuffer[NFC_FRAME_ID_INDEX] - 1 != static_cast<uint8_t>(ECommand::GETFIRMWAREVERSION)) {
@@ -117,17 +117,17 @@ bool CNFCController::Probe() {
             1 - successfully
 */
 /*****************************************************************************/
-bool CNFCController::ConfigureSAM(ESAMMode e_mode, uint8_t un_timeout, bool b_use_irq) {
+bool CNFCController::ConfigureSAM(CPortController::EPort e_port, ESAMMode e_mode, uint8_t un_timeout, bool b_use_irq) {
     m_punIOBuffer[0] = static_cast<uint8_t>(ECommand::SAMCONFIGURATION);
     m_punIOBuffer[1] = static_cast<uint8_t>(e_mode);
     m_punIOBuffer[2] = un_timeout; // timeout = 50ms * un_timeout
     m_punIOBuffer[3] = b_use_irq?1u:0u; // use IRQ pin
     /* write command */
-    if(!write_cmd_check_ack(m_punIOBuffer, 4)){
+    if(!write_cmd_check_ack(e_port, m_punIOBuffer, 4)){
        return false;
     }
     /* read response */
-    read_dt(m_punIOBuffer, 8);
+    read_dt(e_port, m_punIOBuffer, 8);
     /* return whether the reply was as expected */
     return  (m_punIOBuffer[NFC_FRAME_ID_INDEX] - 1 == static_cast<uint8_t>(ECommand::SAMCONFIGURATION));
 }
@@ -141,7 +141,7 @@ bool CNFCController::ConfigureSAM(ESAMMode e_mode, uint8_t un_timeout, bool b_us
             1 - successfully
 */
 /*****************************************************************************/
-bool CNFCController::P2PInitiatorInit() {
+bool CNFCController::P2PInitiatorInit(CPortController::EPort e_port) {
     m_punIOBuffer[0] = static_cast<uint8_t>(ECommand::INJUMPFORDEP);
     m_punIOBuffer[1] = 0x01; // avtive mode
     m_punIOBuffer[2] = 0x02; // 201Kbps
@@ -153,11 +153,11 @@ bool CNFCController::P2PInitiatorInit() {
     m_punIOBuffer[7] = 0x00;
     m_punIOBuffer[8] = 0x00;
 
-    if(!write_cmd_check_ack(m_punIOBuffer, 9)) {
+    if(!write_cmd_check_ack(e_port, m_punIOBuffer, 9)) {
        return false;
     }
 
-    read_dt(m_punIOBuffer, 25);
+    read_dt(e_port, m_punIOBuffer, 25);
 
     if(m_punIOBuffer[5] != PN532_PN532TOHOST) {
        //        Serial.println("InJumpForDEP sent read failed");
@@ -182,7 +182,7 @@ bool CNFCController::P2PInitiatorInit() {
             1 - successfully
 */
 /*****************************************************************************/
-bool CNFCController::P2PTargetInit() {
+bool CNFCController::P2PTargetInit(CPortController::EPort e_port) {
     m_punIOBuffer[0] = static_cast<uint8_t>(ECommand::TGINITASTARGET);
     /** 14443-4A Card only */
     m_punIOBuffer[1] = 0x00;
@@ -230,10 +230,10 @@ bool CNFCController::P2PTargetInit() {
     /** Length of historical bytes  */
     m_punIOBuffer[37] = 0x00;
 
-    if(!write_cmd_check_ack(m_punIOBuffer, 38)) {
+    if(!write_cmd_check_ack(e_port, m_punIOBuffer, 38)) {
        return false;
     }
-    read_dt(m_punIOBuffer, 24);
+    read_dt(e_port, m_punIOBuffer, 24);
 
     if(m_punIOBuffer[5] != PN532_PN532TOHOST){
         return false;
@@ -257,7 +257,8 @@ bool CNFCController::P2PTargetInit() {
             1 - send successfully
 */
 /*****************************************************************************/
-uint8_t CNFCController::P2PInitiatorTxRx(uint8_t* pun_tx_buffer,
+uint8_t CNFCController::P2PInitiatorTxRx(CPortController::EPort e_port, 
+										 uint8_t* pun_tx_buffer,
                                          uint8_t  un_tx_buffer_len,
                                          uint8_t* pun_rx_buffer,
                                          uint8_t  un_rx_buffer_len) {
@@ -267,11 +268,11 @@ uint8_t CNFCController::P2PInitiatorTxRx(uint8_t* pun_tx_buffer,
    /* transfer the tx data into the IO buffer as the command parameter */
    memcpy(m_punIOBuffer + 2, pun_tx_buffer, un_tx_buffer_len);
 
-   if(!write_cmd_check_ack(m_punIOBuffer, un_tx_buffer_len + 2)){
+   if(!write_cmd_check_ack(e_port, m_punIOBuffer, un_tx_buffer_len + 2)){
       return 0;
    }
 
-   read_dt(m_punIOBuffer, 60);
+   read_dt(e_port, m_punIOBuffer, 60);
    if(m_punIOBuffer[5] != PN532_PN532TOHOST){
       return 0;
    }
@@ -302,16 +303,17 @@ uint8_t CNFCController::P2PInitiatorTxRx(uint8_t* pun_tx_buffer,
 */
 /*****************************************************************************/
 
-uint8_t CNFCController::P2PTargetTxRx(uint8_t* pun_tx_buffer, 
+uint8_t CNFCController::P2PTargetTxRx(CPortController::EPort e_port, 
+									  uint8_t* pun_tx_buffer, 
                                       uint8_t  un_tx_buffer_len,
                                       uint8_t* pun_rx_buffer,
                                       uint8_t  un_rx_buffer_len) {
 
    m_punIOBuffer[0] = static_cast<uint8_t>(ECommand::TGGETDATA);
-   if(!write_cmd_check_ack(m_punIOBuffer, 1)){
+   if(!write_cmd_check_ack(e_port, m_punIOBuffer, 1)){
       return 0;
    }
-   read_dt(m_punIOBuffer, 60);
+   read_dt(e_port, m_punIOBuffer, 60);
    if(m_punIOBuffer[5] != PN532_PN532TOHOST){
       return 0;
    }
@@ -331,10 +333,10 @@ uint8_t CNFCController::P2PTargetTxRx(uint8_t* pun_tx_buffer,
    m_punIOBuffer[0] = static_cast<uint8_t>(ECommand::TGSETDATA);
    memcpy(m_punIOBuffer + 1, pun_tx_buffer, un_tx_buffer_len);
 
-   if(!write_cmd_check_ack(m_punIOBuffer, un_tx_buffer_len + 1)) {
+   if(!write_cmd_check_ack(e_port, m_punIOBuffer, un_tx_buffer_len + 1)) {
       return 0;
    }
-   read_dt(m_punIOBuffer, 26);
+   read_dt(e_port, m_punIOBuffer, 26);
    if(m_punIOBuffer[5] != PN532_PN532TOHOST) {
       return 0;
    }
@@ -359,11 +361,11 @@ uint8_t CNFCController::P2PTargetTxRx(uint8_t* pun_tx_buffer,
 /*****************************************************************************/
 
 
-uint8_t CNFCController::write_cmd_check_ack(uint8_t *cmd, uint8_t len) {
-    write_cmd(cmd, len);
+uint8_t CNFCController::write_cmd_check_ack(CPortController::EPort e_port, uint8_t *cmd, uint8_t len) {
+    write_cmd(e_port, cmd, len);
 
     // read acknowledgement
-    if (!read_ack()) {
+    if (!read_ack(e_port)) {
        return false;
     }
     return true; // ack'd command
@@ -398,7 +400,7 @@ void CNFCController::puthex(uint8_t *buf, uint32_t len) {
 	@return NONE
 */
 /*****************************************************************************/
-void CNFCController::write_cmd(uint8_t *cmd, uint8_t len)
+void CNFCController::write_cmd(CPortController::EPort e_port, uint8_t *cmd, uint8_t len)
 {
     uint8_t checksum;
 
@@ -407,6 +409,8 @@ void CNFCController::write_cmd(uint8_t *cmd, uint8_t len)
     System::instance().sleep(2);    // or whatever the delay is for waking up the board
 
     // I2C START
+    CPortController::instance().lock();
+    CPortController::instance().SelectPort(e_port);
     CTWController::GetInstance().lock();
     CTWController::GetInstance().BeginTransmission(PN532_I2C_ADDRESS);
     checksum = PN532_PREAMBLE + PN532_PREAMBLE + PN532_STARTCODE2;
@@ -436,6 +440,8 @@ void CNFCController::write_cmd(uint8_t *cmd, uint8_t len)
     // I2C STOP
     uint8_t err = CTWController::GetInstance().EndTransmission();
     CTWController::GetInstance().unlock();
+    CPortController::instance().unlock();
+    System::instance().sleep(100); 
 
 }
 
@@ -447,11 +453,15 @@ void CNFCController::write_cmd(uint8_t *cmd, uint8_t len)
 	@return true if read was successful.
 */
 /*****************************************************************************/
-bool CNFCController::read_dt(uint8_t *buf, uint8_t len) {
+bool CNFCController::read_dt(CPortController::EPort e_port, uint8_t *buf, uint8_t len) {
    uint8_t unStatus = PN532_I2C_BUSY;
    // attempt to read response twenty times
    for(uint8_t i = 0; i < 25; i++) {
+   
       // Start read (n+1 to take into account leading 0x01 with I2C)
+      CPortController::instance().lock();
+      CPortController::instance().SelectPort(e_port);
+      
       CTWController::GetInstance().lock();
       CTWController::GetInstance().Read(PN532_I2C_ADDRESS, len + 2, true);
       // Read the status byte
@@ -462,6 +472,7 @@ bool CNFCController::read_dt(uint8_t *buf, uint8_t len) {
 		    buf[i] = CTWController::GetInstance().Read();
 		 }
 		 CTWController::GetInstance().unlock(); //!
+		 CPortController::instance().unlock();
          return true;
       }
       else {
@@ -471,6 +482,8 @@ bool CNFCController::read_dt(uint8_t *buf, uint8_t len) {
          }
       }
       CTWController::GetInstance().unlock();
+      CPortController::instance().unlock();
+      
       System::instance().sleep(10);
    }
 
@@ -487,11 +500,11 @@ bool CNFCController::read_dt(uint8_t *buf, uint8_t len) {
             1 - Ack OK
 */
 /*****************************************************************************/
-bool CNFCController::read_ack(void)
+bool CNFCController::read_ack(CPortController::EPort e_port)
 {
    uint8_t ack_buf[6] = {0};
 
-   read_dt(ack_buf, 6);
+   read_dt(e_port, ack_buf, 6);
 
    //    puthex(ack_buf, 6);
    //    Serial.println();

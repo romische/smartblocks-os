@@ -78,37 +78,39 @@ public:
 
    CNFCController() {}  //remove and make everything static as in led_controller?
    
-   bool Init();
+   bool Init(CPortController::EPort e_port);
    
-   bool Send(uint8_t* msg, uint8_t  len);
+   bool Send(CPortController::EPort e_port, uint8_t* msg, uint8_t  len);
    
-   bool Receive(uint8_t* msg, uint8_t len);
+   bool Receive(CPortController::EPort e_port, uint8_t* msg, uint8_t len);
 
-   bool Probe();
+   bool Probe(CPortController::EPort e_port);
 
-   bool ConfigureSAM(ESAMMode e_mode = ESAMMode::NORMAL, uint8_t un_timeout = 20, bool b_use_irq = false);
+   bool ConfigureSAM(CPortController::EPort e_port, ESAMMode e_mode = ESAMMode::NORMAL, uint8_t un_timeout = 20, bool b_use_irq = false);
 
-   bool P2PInitiatorInit();
+   bool P2PInitiatorInit(CPortController::EPort e_port);
 
-   bool P2PTargetInit();
+   bool P2PTargetInit(CPortController::EPort e_port);
 
-   uint8_t P2PInitiatorTxRx(uint8_t* pun_tx_buffer, 
+   uint8_t P2PInitiatorTxRx(CPortController::EPort e_port, 
+   							uint8_t* pun_tx_buffer, 
                             uint8_t  un_tx_buffer_len, 
                             uint8_t* pun_rx_buffer,
                             uint8_t  un_rx_buffer_len);
 
-   uint8_t P2PTargetTxRx(uint8_t* pun_tx_buffer, 
+   uint8_t P2PTargetTxRx(CPortController::EPort e_port, 
+   						 uint8_t* pun_tx_buffer, 
                          uint8_t  un_tx_buffer_len, 
                          uint8_t* pun_rx_buffer,
                          uint8_t  un_rx_buffer_len);
 
-   bool PowerDown();
+   bool PowerDown(CPortController::EPort e_port);
    
 private:
-   void write_cmd(uint8_t *cmd, uint8_t len);
-   uint8_t write_cmd_check_ack(uint8_t *cmd, uint8_t len);
-   bool read_dt(uint8_t *buf, uint8_t len);
-   bool read_ack(void);
+   void write_cmd(CPortController::EPort e_port, uint8_t *cmd, uint8_t len);
+   uint8_t write_cmd_check_ack(CPortController::EPort e_port, uint8_t *cmd, uint8_t len);
+   bool read_dt(CPortController::EPort e_port, uint8_t *buf, uint8_t len);
+   bool read_ack(CPortController::EPort e_port);
 
    void puthex(uint8_t data);
    void puthex(uint8_t *buf, uint32_t len);

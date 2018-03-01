@@ -315,17 +315,14 @@ void InitNFC(){
       if(eConnectedPort != CPortController::EPort::NULLPORT) {
       	 //select face
          CPortController::instance().lock();
-         CPortController::instance().SelectPort(eConnectedPort);
+		 CPortController::instance().SelectPort(eConnectedPort);
          CPortController::instance().EnablePort(eConnectedPort);
-         
-         bool success = nfc.Init();
-         if(success){
-			 CPortController::instance().unlock();
-			 CLEDController::SetAllColorsOnFace(eConnectedPort,0x01,0x01,0x02); 
-			 CPortController::instance().lock();
-         }
-         
          CPortController::instance().unlock();
+         
+         bool success = nfc.Init(eConnectedPort);
+         if(success){
+			 CLEDController::SetAllColorsOnFace(eConnectedPort,0x01,0x01,0x02); 
+         }
       }
    }
    
@@ -347,14 +344,12 @@ void NFCTransmit(){
 		   uint8_t punOutboundBuffer[] = {'T','M'};
 		   uint8_t unRxCount = 0;
 		   
-		   //select face
-		   CPortController::instance().lock();
-		   CPortController::instance().SelectPort(eConnectedPort);
-		   
 		   //transmit
 		   CNFCController nfc;
-		   bool success = nfc.Send(punOutboundBuffer,2);
+		   bool success = nfc.Send(eConnectedPort,punOutboundBuffer,2);
 
+		   CPortController::instance().lock();
+		   CPortController::instance().SelectPort(eConnectedPort);
 		   CPortController::instance().ClearInterrupts(); //why clear interrupts?
 		   CPortController::instance().unlock();
 		 
@@ -392,20 +387,13 @@ void NFCReact(){
 				   	uint8_t punInboundBuffer[2];
 				    uint8_t unRxCount = 0;
 				    
-				    
-				    CPortController::instance().lock();
-				    CPortController::instance().SelectPort(eRxPort);
-				             
 				    CNFCController nfc;
-				    if(nfc.Receive(punInboundBuffer, 2)){
+				    if(nfc.Receive(eRxPort, punInboundBuffer, 2)){
 				    	LOG("msg on ", CPortController::instance().GetPortString(eRxPort))
 				    	CHUARTController::instance().lock();
 						printf("(msg is %c%c)\r\n",punInboundBuffer[0],punInboundBuffer[1]);
 						CHUARTController::instance().unlock();
 				    }
-
-				    CPortController::instance().unlock();
-
 				}//if
 			}//if
 	    }//for
