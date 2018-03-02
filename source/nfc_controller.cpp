@@ -14,6 +14,10 @@ uint8_t default_response_len = 1;
 /***********************************************************/
 /***********************************************************/
 
+/*
+ * msg is a filled buffer
+ * send is validated if gotten default_response as response
+ */
 bool CNFCController::Send(CPortController::EPort e_port, uint8_t* msg, uint8_t len){
 	uint8_t unRxCount = 0;
 	uint8_t punInboundBuffer[default_response_len];
@@ -29,6 +33,7 @@ bool CNFCController::Send(CPortController::EPort e_port, uint8_t* msg, uint8_t l
 
 /*
  * msg is an empty buffer
+ * send default_response as response
  */
 bool CNFCController::Receive(CPortController::EPort e_port, uint8_t* msg, uint8_t len){
 	uint8_t unRxCount = 0;
@@ -39,6 +44,26 @@ bool CNFCController::Receive(CPortController::EPort e_port, uint8_t* msg, uint8_
 	PowerDown(e_port);
 	System::instance().sleep(100);
 	return (unRxCount>0);
+}
+
+/*
+ * init nfc on face e_port
+ */
+bool CNFCController::Init(CPortController::EPort e_port){
+	bool success = false;
+         //3 attempts to init NFC
+    for(uint8_t unAttempts = 3; unAttempts > 0; unAttempts--) {
+	   	if(Probe(e_port) == true) {
+		  if(ConfigureSAM(e_port) == true) {
+			 if(PowerDown(e_port) == true) {
+			 	success=true;
+	            break;
+			 }
+		  }   
+	   	}
+        System::instance().sleep(100);
+    }
+    return success;
 }
 
 
@@ -68,29 +93,6 @@ bool CNFCController::PowerDown(CPortController::EPort e_port) {
    }
    return true;
 }
-
-
-/***********************************************************/
-/***********************************************************/
-
-bool CNFCController::Init(CPortController::EPort e_port){
-	bool success = false;
-         //3 attempts to init NFC
-    for(uint8_t unAttempts = 3; unAttempts > 0; unAttempts--) {
-	   	if(Probe(e_port) == true) {
-		  if(ConfigureSAM(e_port) == true) {
-			 if(PowerDown(e_port) == true) {
-			 	success=true;
-	            break;
-			 }
-		  }   
-	   	}
-        System::instance().sleep(100);
-    }
-    return success;
-}
-
-
 
 /***********************************************************/
 /***********************************************************/
@@ -386,14 +388,18 @@ uint8_t CNFCController::write_cmd_check_ack(CPortController::EPort e_port, uint8
 */
 /*****************************************************************************/
 void CNFCController::puthex(uint8_t data) {
-   fprintf(CHUARTController::instance().get_file(), "0x%02x ", data);
+	CHUARTController::instance().lock();
+    fprintf(CHUARTController::instance().get_file(), "0x%02x ", data);
+	CHUARTController::instance().unlock();
 }
 
 
 void CNFCController::puthex(uint8_t *buf, uint32_t len) {
     for(uint32_t i = 0; i < len; i++)
     {
-       fprintf(CHUARTController::instance().get_file(), "0x%02x ", buf[i]);
+    	CHUARTController::instance().lock();
+        fprintf(CHUARTController::instance().get_file(), "0x%02x ", buf[i]);
+		CHUARTController::instance().unlock();
     }
 }
 
