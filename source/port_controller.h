@@ -8,6 +8,7 @@
 #include "tw_controller.h"
 #include "system.h" //for sleep(int) in IsPortConnected(..)
 					//!!\ this implies that CPortController can only be used in the multitasking context
+#include "huart_controller.h"
 
 #define EXT_INT0_SENSE_MASK        0x03
 #define EXT_INT0_FALLING_EDGE      0x02
@@ -34,6 +35,26 @@ public:
    static CPortController& instance() {
       return _port_controller;
    }
+   /*
+   If cport instance is created on demand, there is no risk of initialization before twcontroller (static initialization order fiasco), allowing us to move content of function Init() in constructor. 
+   */
+   /*
+   static CPortController& instance() {
+      static CPortController* _port_controller;
+      CHUARTController::instance().lock();
+  	  fprintf(CHUARTController::instance().get_file(), "hey!\r\n");
+      CHUARTController::instance().lock();
+      return *_port_controller;
+   }
+   */
+   /*
+   When using "static CPortController* _port_controller;" 
+   		Constructor is not called
+   When using "static CPortController* _port_controller = new CPortController();"
+   		undefined reference to __cxa_guard_acquire___ 
+   		sol use -fno-threadsafe-statics 
+   		(arobenko.gitbooks.io/bare_metal_cpp/content/compiler_output/static.html)
+   */
 
    void Init();
    

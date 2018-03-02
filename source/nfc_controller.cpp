@@ -472,7 +472,6 @@ bool CNFCController::read_dt(CPortController::EPort e_port, uint8_t *buf, uint8_
       // Start read (n+1 to take into account leading 0x01 with I2C)
       CPortController::instance().lock();
       CPortController::instance().SelectPort(e_port);
-      
       CTWController::GetInstance().lock();
       CTWController::GetInstance().Read(PN532_I2C_ADDRESS, len + 2, true);
       // Read the status byte
