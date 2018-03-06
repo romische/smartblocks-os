@@ -6,6 +6,7 @@
 
 //singleton instance
 CPortController CPortController::_port_controller; 
+bool CPortController::bInitRequired = true;
 
 
 CPortController::CPortInterrupt::CPortInterrupt(CPortController* pc_port_controller, uint8_t un_intr_vect_num) :
@@ -39,6 +40,9 @@ CPortController::CPortController() :
 
 
 void CPortController::Init() {
+   
+   SelectPort(EPort::NULLPORT);
+   
    /* Configure the port reset register */
    CTWController::GetInstance().lock();
    CTWController::GetInstance().BeginTransmission(PCA9554_RST_ADDR);

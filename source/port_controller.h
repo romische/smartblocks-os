@@ -33,6 +33,12 @@ public:
    };
 public:
    static CPortController& instance() {
+   	  if(bInitRequired){
+   	    _port_controller.lock();
+   	  	_port_controller.Init();
+   	  	bInitRequired = false;
+   	  	_port_controller.unlock();
+   	  }
       return _port_controller;
    }
    /*
@@ -41,9 +47,6 @@ public:
    /*
    static CPortController& instance() {
       static CPortController* _port_controller;
-      CHUARTController::instance().lock();
-  	  fprintf(CHUARTController::instance().get_file(), "hey!\r\n");
-      CHUARTController::instance().lock();
       return *_port_controller;
    }
    */
@@ -89,6 +92,7 @@ private:
    uint8_t m_unInterrupts;
    uint8_t m_unLastRegisterState;
    bool bSynchronizeRequired; 
+   static bool bInitRequired;
 
    class CPortInterrupt : public CInterrupt {
    private:

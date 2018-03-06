@@ -178,7 +178,7 @@ void InitPortController() {
    CPortController::instance().lock();
    CPortController::instance().SelectPort(CPortController::EPort::NULLPORT);
    System::instance().sleep(10);
-   CPortController::instance().Init();
+   //CPortController::instance().Init();
 
    /* Fill the list m_peConnectedPorts */
    for(CPortController::EPort& ePort : m_peAllPorts) {
