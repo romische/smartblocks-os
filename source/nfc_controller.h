@@ -78,6 +78,8 @@ public:
 
    CNFCController() {}  //remove and make everything static as in led_controller?
    
+   bool HasExternalField(CPortController::EPort e_port);
+   
    bool Init(CPortController::EPort e_port);
    
    bool Send(CPortController::EPort e_port, uint8_t* msg, uint8_t  len);

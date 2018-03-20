@@ -11,6 +11,28 @@ uint8_t default_response[1] = {'T'};
 uint8_t default_response_len = 1;
 
 
+bool CNFCController::HasExternalField(CPortController::EPort e_port){
+	//https://www.nxp.com/docs/en/user-guide/141520.pdf
+
+   m_punIOBuffer[0] = static_cast<uint8_t>(ECommand::GETGENERALSTATUS);
+   /* write command and check ack frame */
+   if(!write_cmd_check_ack(e_port,m_punIOBuffer, 1)) {
+      return false;
+   }
+   
+   /* read the rest of the reply */
+   read_dt(e_port,m_punIOBuffer, 10);
+   /* verify that the recieved data was a reply frame to given command */
+   if(m_punIOBuffer[NFC_FRAME_DIRECTION_INDEX] != PN532_PN532TOHOST ||
+      m_punIOBuffer[NFC_FRAME_ID_INDEX] - 1 != static_cast<uint8_t>(ECommand::GETGENERALSTATUS)) {
+      return false;
+   }
+   
+   /* check the firmware version */
+   return (m_punIOBuffer[NFC_FRAME_ID_INDEX+2]==0x01);
+}
+
+
 /***********************************************************/
 /***********************************************************/
 
@@ -25,6 +47,7 @@ bool CNFCController::Send(CPortController::EPort e_port, uint8_t* msg, uint8_t l
 	if(P2PInitiatorInit(e_port)) {
 		unRxCount = P2PInitiatorTxRx(e_port, msg, len, punInboundBuffer, default_response_len);
 	}
+	System::instance().sleep(50);
 	PowerDown(e_port);
 	System::instance().sleep(100);
 	

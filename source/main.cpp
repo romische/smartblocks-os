@@ -452,6 +452,20 @@ void InteractiveMode(){
 			  NFCTransmit();
     	 }
     	 
+    	 else if(unInput=='u'){
+    	 	System::instance().schedule_task((void*) dummy5, nullptr);
+    	 }
+    	 
+    	 else if (unInput=='n'){
+    	 	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::NORTH);
+    	 }
+    	 else if (unInput=='e'){
+    	 	System::instance().schedule_task((void*) VariateLEDsOnPort, (void*) CPortController::EPort::EAST);
+    	 }
+    	 else if (unInput=='i'){
+    	 	System::instance().schedule_task((void*) InitNFC, nullptr);
+    	 }
+    	 
     	 //else listen to eventual nfc messages
     	 else {
     	 	NFCReact();
@@ -473,11 +487,9 @@ void NFCtask(){
 	System::instance().schedule_task((void*) InitNFC, nullptr);
     System::instance().sleep(5000);
     
-    LOG("intmode start", "")
-    
     //interactive mode 
     System::instance().schedule_task((void*) InteractiveMode, nullptr);
-    System::instance().schedule_task((void*) InteractiveMode, nullptr);
+    //System::instance().schedule_task((void*) InteractiveMode, nullptr);
 
     System::instance().exit_task();
 }
