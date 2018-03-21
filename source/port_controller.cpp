@@ -24,6 +24,9 @@ void CPortController::CPortInterrupt::ServiceRoutine() {
 /***********************************************************/
 /***********************************************************/
 
+
+
+
 CPortController::CPortController() :
    m_unInterrupts(0x00),
    m_unLastRegisterState(0xFF),
@@ -36,6 +39,17 @@ CPortController::CPortController() :
    /* Disable all ports initially */
    /* Safe state, since selected a non-connected face results in stalling the tw bus on R/W */
    SelectPort(EPort::NULLPORT);
+}
+
+
+CPortController& CPortController::instance() {
+  if(bInitRequired){
+    _port_controller.lock(); //this is okay because first call of instance is guaranteed to happen before a lock
+  	_port_controller.Init();
+  	bInitRequired = false;
+  	_port_controller.unlock();
+  }
+  return _port_controller;
 }
 
 

@@ -32,34 +32,7 @@ public:
       NULLPORT = 8
    };
 public:
-   static CPortController& instance() {
-   	  if(bInitRequired){
-   	    _port_controller.lock();
-   	  	_port_controller.Init();
-   	  	bInitRequired = false;
-   	  	_port_controller.unlock();
-   	  }
-      return _port_controller;
-   }
-   /*
-   If cport instance is created on demand, there is no risk of initialization before twcontroller (static initialization order fiasco), allowing us to move content of function Init() in constructor. 
-   */
-   /*
-   static CPortController& instance() {
-      static CPortController* _port_controller;
-      return *_port_controller;
-   }
-   */
-   /*
-   When using "static CPortController* _port_controller;" 
-   		Constructor is not called
-   When using "static CPortController* _port_controller = new CPortController();"
-   		undefined reference to __cxa_guard_acquire___ 
-   		sol use -fno-threadsafe-statics 
-   		(arobenko.gitbooks.io/bare_metal_cpp/content/compiler_output/static.html)
-   */
-
-   void Init();
+   static CPortController& instance();
    
    /* detects interrupts at the port interrupt register */
    void SynchronizeInterrupts();
@@ -76,9 +49,9 @@ public:
    const char* GetPortString(EPort ePort);
 
 private:
-
    static CPortController _port_controller; //singleton instance
    CPortController();
+   void Init();
    CPortController(CPortController const&);
    void operator=(CPortController const&);
    
